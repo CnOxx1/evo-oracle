@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+*.log
+
+# Node
+node_modules/
+dist/
+.vite/
+*.local
+
+# Sui Move
+contracts/**/build/
+
+# OS
+.DS_Store
+Thumbs.db
