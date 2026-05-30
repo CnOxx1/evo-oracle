@@ -13,8 +13,10 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
+from alert_engine.engine import detect_alerts
 from api_client.client import EvoQuantAPIError, EvoQuantClient
 from config.settings import settings
+from risk_composer.composer import compose_risk
 from signal_processor.processor import build_oracle_payload
 
 app = FastAPI(
@@ -100,6 +102,57 @@ async def oracle_all() -> dict[str, Any]:
         except HTTPException:
             results[symbol] = {"error": "unavailable"}
     return {"symbol_count": len(results), "oracles": results}
+
+
+@app.get("/api/risk-breakdown/{symbol}")
+async def risk_breakdown(symbol: str) -> dict[str, Any]:
+    """可解释风险评分：综合分 + 各证据链贡献明细。"""
+    cache_key = f"breakdown:{symbol.upper()}"
+    if (cached := _cache_get(cache_key)) is not None:
+        return cached
+
+    async with EvoQuantClient() as client:
+        try:
+            signal = await client.get_signal(symbol)
+            macro = await client.get_macro_regime()
+            sentiment = await client.get_sentiment_summary()
+        except EvoQuantAPIError as e:
+            raise HTTPException(status_code=502, detail=f"数据基座不可用: {e}")
+
+    result = compose_risk(signal, macro, sentiment)
+    _cache_set(cache_key, result)
+    return result
+
+
+@app.get("/api/alerts/{symbol}")
+async def alerts_symbol(symbol: str) -> dict[str, Any]:
+    """单资产异常告警列表。"""
+    async with EvoQuantClient() as client:
+        try:
+            signal = await client.get_signal(symbol)
+            macro = await client.get_macro_regime()
+            sentiment = await client.get_sentiment_summary()
+        except EvoQuantAPIError as e:
+            raise HTTPException(status_code=502, detail=f"数据基座不可用: {e}")
+
+    composite = compose_risk(signal, macro, sentiment)
+    return detect_alerts(signal, composite, macro, sentiment)
+
+
+@app.get("/api/alerts")
+async def alerts_all() -> dict[str, Any]:
+    """全部 tracked 资产的告警汇总（Dashboard 告警流）。"""
+    feed: list[dict[str, Any]] = []
+    for symbol in settings.tracked_symbols:
+        try:
+            result = await alerts_symbol(symbol)
+            for a in result.get("alerts", []):
+                feed.append({**a, "symbol": result.get("symbol", symbol)})
+        except HTTPException:
+            continue
+    severity_rank = {"critical": 2, "warning": 1, "info": 0}
+    feed.sort(key=lambda x: severity_rank.get(x.get("severity", "info"), 0), reverse=True)
+    return {"alert_count": len(feed), "alerts": feed}
 
 
 @app.get("/api/vault/state")

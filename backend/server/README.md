@@ -15,8 +15,13 @@
 | `GET /api/health` | EvoOracle 后端 + 数据基座健康 | 全局 |
 | `GET /api/oracle/{symbol}` | 单资产链上信号视图（含转换后的 payload） | oracle_dashboard |
 | `GET /api/oracle` | 全部 tracked 资产信号摘要 | oracle_dashboard |
+| `GET /api/risk-breakdown/{symbol}` | 可解释风险评分（证据链贡献明细） | risk_breakdown |
+| `GET /api/alerts/{symbol}` | 单资产异常告警列表 | alert_feed |
+| `GET /api/alerts` | 全资产告警流（按严重度排序） | alert_feed |
 | `GET /api/vault/state` | Vault 当前仓位 + Protected/Static 对比 | vault_ui |
 | `GET /api/backtest/luna` | LUNA 崩盘期间历史回测序列 | backtest_view |
+
+`/api/risk-breakdown` 由 `risk_composer` 提供，`/api/alerts` 由 `alert_engine` 提供。
 
 > 注：`/api/vault/state` 与 `/api/backtest/luna` 在脚手架阶段返回结构化占位数据，
 > 待 Vault 合约与回测计算接入后替换为真实数据。
