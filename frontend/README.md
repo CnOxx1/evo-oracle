@@ -25,7 +25,10 @@ EvoOracle 的前端 Dashboard。展示链上信号、Vault 对比与历史回测
 
 | 模块 | 目录 | 功能 |
 | --- | --- | --- |
+| 登录 (zkLogin) | [src/modules/auth/](src/modules/auth/README.md) | Google 一键登录，无需钱包 |
 | Oracle 面板 | [src/modules/oracle_dashboard/](src/modules/oracle_dashboard/README.md) | 链上信号实时监控 |
+| 风险拆解 | [src/modules/risk_breakdown/](src/modules/risk_breakdown/README.md) | 可解释风险评分可视化 |
+| 告警流 | [src/modules/alert_feed/](src/modules/alert_feed/README.md) | 实时异常告警流 |
 | Vault 界面 | [src/modules/vault_ui/](src/modules/vault_ui/README.md) | 存取款 + Protected vs Static 对比 |
 | 历史回测 | [src/modules/backtest_view/](src/modules/backtest_view/README.md) | LUNA 崩盘策略复盘可视化 |
 
@@ -37,11 +40,14 @@ frontend/
 ├── package.json
 ├── src/
 │   ├── modules/
+│   │   ├── auth/               （zkLogin 登录）
 │   │   ├── oracle_dashboard/   （含 README.md + 组件）
+│   │   ├── risk_breakdown/
+│   │   ├── alert_feed/
 │   │   ├── vault_ui/
 │   │   └── backtest_view/
 │   ├── api/                    （封装对 backend :8100 的调用）
-│   └── lib/                    （Sui 客户端、通用工具）
+│   └── lib/                    （Sui 客户端、zkLogin.ts、通用工具）
 ```
 
 ## 启动
@@ -63,3 +69,5 @@ npm run dev          # 默认 http://localhost:5173
 | 日期 | 改动 |
 | --- | --- |
 | 2026-05-30 | 初始化前端结构，定义三大模块文件夹与 md |
+| 2026-05-30 | 新增 risk_breakdown（风险拆解）与 alert_feed（告警流）模块 |
+| 2026-05-30 | 新增 auth（zkLogin）模块与 lib/zkLogin.ts 登录流程工具 |

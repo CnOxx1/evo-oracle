@@ -13,6 +13,9 @@ EvoOracle 的 Sui Move 合约层，包含两个模块：链上风险预言机（
 | --- | --- | --- |
 | Oracle | [oracle/](oracle/README.md) | 存储各资产风险评分 + AI 信号，授权更新、公开读取 |
 | RiskVault | [risk_vault/](risk_vault/README.md) | 读取 Oracle，按风险评分自动调整 SUI/USDC 仓位 |
+| Alert | [alert/](alert/README.md) | 把异常作为链上 event 发出，协议可订阅 |
+| LendingAdapter | [adapters/lending_adapter/](adapters/lending_adapter/README.md) | 借贷协议接入示例：动态 LTV |
+| PerpAdapter | [adapters/perp_adapter/](adapters/perp_adapter/README.md) | 永续协议接入示例：动态最大杠杆 |
 
 ## 包结构
 
@@ -25,9 +28,19 @@ contracts/
 ├── oracle/
 │   ├── README.md
 │   └── sources/oracle.move
-└── risk_vault/
-    ├── README.md
-    └── sources/risk_vault.move
+├── risk_vault/
+│   ├── README.md
+│   └── sources/risk_vault.move
+├── alert/
+│   ├── README.md
+│   └── sources/alert.move
+└── adapters/
+    ├── lending_adapter/
+    │   ├── README.md
+    │   └── sources/lending_adapter.move
+    └── perp_adapter/
+        ├── README.md
+        └── sources/perp_adapter.move
 ```
 
 ## 编译与部署
@@ -41,7 +54,10 @@ contracts/
 cd contracts
 # 构建前：收集各模块源码到 sources/
 mkdir -p sources
-cp oracle/sources/*.move risk_vault/sources/*.move sources/
+cp oracle/sources/*.move risk_vault/sources/*.move \
+   alert/sources/*.move \
+   adapters/lending_adapter/sources/*.move \
+   adapters/perp_adapter/sources/*.move sources/
 
 sui move build
 sui client publish --gas-budget 100000000
@@ -67,3 +83,5 @@ backend/sui_publisher
 | 日期 | 改动 |
 | --- | --- |
 | 2026-05-30 | 初始化 Move package，定义 Oracle 与 RiskVault 骨架 |
+| 2026-05-30 | 新增 alert（链上 event 告警）与 lending_adapter（动态 LTV）模块 |
+| 2026-05-30 | 新增 perp_adapter（动态最大杠杆），适配器升级为多协议（借贷 + 永续） |

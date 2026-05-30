@@ -19,6 +19,8 @@ EvoOracle 的后端服务，承担两个角色：
 | --- | --- | --- |
 | `config` | [config/](config/README.md) | 集中配置：EvoQuantV3 地址、Sui 网络、对象 ID |
 | `api_client` | [api_client/](api_client/README.md) | EvoQuantV3 API 客户端封装 |
+| `risk_composer` | [risk_composer/](risk_composer/README.md) | 可解释风险评分（证据链加权拆解） |
+| `alert_engine` | [alert_engine/](alert_engine/README.md) | 异常检测引擎（6 类告警 + 三级严重度） |
 | `signal_processor` | [signal_processor/](signal_processor/README.md) | 信号 → 链上整数格式转换 |
 | `sui_publisher` | [sui_publisher/](sui_publisher/README.md) | 提交 Move 合约调用 |
 | `scheduler` | [scheduler/](scheduler/README.md) | Bridge 定时主循环 |
@@ -63,3 +65,4 @@ python -m server.app --port 8100
 | 日期 | 改动 |
 | --- | --- |
 | 2026-05-30 | 初始化后端结构与各模块脚手架 |
+| 2026-05-30 | 新增 risk_composer（可解释评分）与 alert_engine（异常检测）两个模块，server 暴露对应接口 |

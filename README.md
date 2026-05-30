@@ -39,6 +39,8 @@ EvoQuantV3 负责「理解市场」，EvoOracle 负责「把市场判断送上�
 | 模块 | 目录 | 功能 |
 | --- | --- | --- |
 | API 客户端 | `backend/api_client` | 封装对 EvoQuantV3 (127.0.0.1:8000) 的所有调用 |
+| 可解释风险评分 | `backend/risk_composer` | 多证据链加权合成风险分 + 贡献拆解 |
+| 异常告警 | `backend/alert_engine` | 从信号中检测风险事件，分级告警 |
 | 信号处理 | `backend/signal_processor` | 把 API 返回数据转换成链上整数格式 |
 | Sui 发布 | `backend/sui_publisher` | 调用 Move 合约更新 Oracle、触发 Vault 再平衡 |
 | 调度器 | `backend/scheduler` | 定时主循环（每 5 分钟拉取 + 发布） |
@@ -51,12 +53,18 @@ EvoQuantV3 负责「理解市场」，EvoOracle 负责「把市场判断送上�
 | --- | --- | --- |
 | EvoOracle | `contracts/oracle` | 存储各资产风险评分 + AI 信号，授权更新、公开读取 |
 | RiskVault | `contracts/risk_vault` | 读取 Oracle，按风险评分自动调整 SUI/USDC 仓位 |
+| Alert | `contracts/alert` | 把异常作为链上 event 发出，协议可订阅 |
+| LendingAdapter | `contracts/adapters/lending_adapter` | 借贷协议接入示例：动态 LTV |
+| PerpAdapter | `contracts/adapters/perp_adapter` | 永续协议接入示例：动态最大杠杆 |
 
 ### frontend（前端）
 
 | 模块 | 目录 | 功能 |
 | --- | --- | --- |
+| 登录 (zkLogin) | `frontend/src/modules/auth` | Google 一键登录，无需钱包 |
 | Oracle 面板 | `frontend/src/modules/oracle_dashboard` | 链上信号实时监控 |
+| 风险拆解 | `frontend/src/modules/risk_breakdown` | 可解释风险评分可视化 |
+| 告警流 | `frontend/src/modules/alert_feed` | 实时异常告警流 |
 | Vault 界面 | `frontend/src/modules/vault_ui` | 存取款 + Protected vs Static 对比 |
 | 历史回测 | `frontend/src/modules/backtest_view` | LUNA 崩盘期间的策略复盘可视化 |
 
@@ -108,3 +116,5 @@ cd frontend && npm install && npm run dev
 | --- | --- | --- |
 | 2026-05-30 | 初始化项目脚手架，建立三层结构与全部模块 md | 全部 |
 | 2026-05-30 | 新增参赛提交文档 `SUBMISSION.md`（评委向） | 文档 |
+| 2026-05-30 | 新增亮点功能：可解释风险评分、异常告警（后端真实实现）、链上 Alert event、借贷动态 LTV 适配器、前端风险拆解/告警流模块 | backend / contracts / frontend |
+| 2026-05-30 | 适配器升级为多协议：新增 perp_adapter（动态最大杠杆）；新增 zkLogin 登录（auth 模块 + lib/zkLogin.ts），Demo 免钱包 | contracts / frontend |
