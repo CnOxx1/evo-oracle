@@ -31,6 +31,10 @@ EvoOracle 的前端 Dashboard。展示链上信号、Vault 对比与历史回测
 | 告警流 | [src/modules/alert_feed/](src/modules/alert_feed/README.md) | 实时异常告警流 |
 | Vault 界面 | [src/modules/vault_ui/](src/modules/vault_ui/README.md) | 存取款 + Protected vs Static 对比 |
 | 历史回测 | [src/modules/backtest_view/](src/modules/backtest_view/README.md) | LUNA 崩盘策略复盘可视化 |
+| 压力测试 | src/modules/stress_test/ | 冲击传导模拟器（选资产+幅度，实时计算全组合损失） |
+| 清算预测 | src/modules/predictive_liq/ | 4因子加权预测未来4h清算概率 |
+| 多协议联动 | src/modules/protocol_agg/ | 一信号同时驱动 Lending/Perp/Vault 参数对比 |
+| 调仓演示 | src/modules/rebalancer_demo/ | 三场景24h时间序列调仓动画 |
 
 ## 目录约定
 
@@ -45,7 +49,14 @@ frontend/
 │   │   ├── risk_breakdown/
 │   │   ├── alert_feed/
 │   │   ├── vault_ui/
-│   │   └── backtest_view/
+│   │   ├── backtest_view/
+│   │   ├── contagion_map/      （跨资产传导图）
+│   │   ├── liquidation_shield/ （清算级联保护）
+│   │   ├── whale_signal/       （鲸鱼信号）
+│   │   ├── stress_test/        （压力测试模拟器）
+│   │   ├── predictive_liq/     （清算概率预测）
+│   │   ├── protocol_agg/       （多协议联动）
+│   │   └── rebalancer_demo/    （调仓演示动画）
 │   ├── api/                    （封装对 backend :8100 的调用）
 │   └── lib/                    （Sui 客户端、zkLogin.ts、通用工具）
 ```
@@ -80,3 +91,4 @@ npm run dev          # 默认 http://localhost:5173
 | 2026-05-30 | 新增 risk_breakdown（风险拆解）与 alert_feed（告警流）模块 |
 | 2026-05-30 | 新增 auth（zkLogin）模块与 lib/zkLogin.ts 登录流程工具 |
 | 2026-05-31 | 完成全部前端组件实现：OracleDashboard、RiskBreakdown、AlertFeed、VaultUI、BacktestView、Auth；新增 API client、suiClient、format 工具；Vite 构建基础设施（vite.config.ts、tsconfig.json、index.html、main.tsx、index.css 暗色主题）；App Shell Tab 导航 |
+| 2026-05-31 | 新增四大高级模块：StressTest（压力测试模拟器）、PredictiveLiq（清算概率预测）、ProtocolAgg（多协议联动对比）、RebalancerDemo（三场景调仓动画）；Tab 导航扩展至 12 页 |

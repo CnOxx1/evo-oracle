@@ -46,6 +46,13 @@ EvoQuantV3 负责「理解市场」，EvoOracle 负责「把市场判断送上�
 | 调度器 | `backend/scheduler` | 定时主循环（每 5 分钟拉取 + 发布） |
 | 前端 API | `backend/server` | 给前端提供聚合后的 REST 接口（前后端分离） |
 | 配置 | `backend/config` | API 地址、Sui 网络、对象 ID 等集中配置 |
+| 传导图引擎 | `backend/contagion_engine` | 跨资产风险传导图（相关性矩阵 + 板块轮动 + 组合风险） |
+| 清算保护 | `backend/liquidation_shield` | 清算级联保护（OI + 资金费率 + VaR + 相关性） |
+| 鲸鱼信号 | `backend/whale_signal` | 鲸鱼风险信号（RS 突变 + 资金流向 + 资金费率） |
+| 压力测试 | `backend/stress_test` | 冲击传导模拟器（相关性×beta 计算全组合损失 + 级联清算估算） |
+| 清算预测 | `backend/predictive_liq` | 预测性清算告警（OI增速/资金费率/相关性集中度/波动率四因子sigmoid概率） |
+| 多协议联动 | `backend/protocol_aggregator` | 一信号同时驱动 Lending LTV / Perp 杠杆 / Vault 仓位 |
+| 调仓演示 | `backend/rebalancer_demo` | 三场景（正常/压力/崩盘）24h 时间序列调仓动画数据 |
 
 ### contracts（链上合约）
 
@@ -67,6 +74,13 @@ EvoQuantV3 负责「理解市场」，EvoOracle 负责「把市场判断送上�
 | 告警流 | `frontend/src/modules/alert_feed` | 实时异常告警流 |
 | Vault 界面 | `frontend/src/modules/vault_ui` | 存取款 + Protected vs Static 对比 |
 | 历史回测 | `frontend/src/modules/backtest_view` | LUNA 崩盘期间的策略复盘可视化 |
+| 传导图 | `frontend/src/modules/contagion_map` | 跨资产风险传导图可视化 |
+| 清算保护 | `frontend/src/modules/liquidation_shield` | 清算级联保护面板 |
+| 鲸鱼信号 | `frontend/src/modules/whale_signal` | 大资金动向推断 |
+| 压力测试 | `frontend/src/modules/stress_test` | 冲击传导模拟器（选资产+幅度，实时计算全组合损失） |
+| 清算预测 | `frontend/src/modules/predictive_liq` | 4因子加权预测未来4h清算概率 |
+| 多协议联动 | `frontend/src/modules/protocol_agg` | 一信号同时驱动 Lending/Perp/Vault 参数对比 |
+| 调仓演示 | `frontend/src/modules/rebalancer_demo` | 三场景24h时间序列调仓动画 |
 
 ## 数据流
 
@@ -119,3 +133,4 @@ cd frontend && npm install && npm run dev
 | 2026-05-30 | 新增亮点功能：可解释风险评分、异常告警（后端真实实现）、链上 Alert event、借贷动态 LTV 适配器、前端风险拆解/告警流模块 | backend / contracts / frontend |
 | 2026-05-30 | 适配器升级为多协议：新增 perp_adapter（动态最大杠杆）；新增 zkLogin 登录（auth 模块 + lib/zkLogin.ts），Demo 免钱包 | contracts / frontend |
 | 2026-05-31 | **Demo-ready 完成**：前端全部 6 模块组件实现（OracleDashboard、RiskBreakdown、AlertFeed、VaultUI、BacktestView、Auth）；后端补全 vault/state 和 backtest/luna 端点；sui_publisher 集成 pysui；Vite 构建基础设施 + App Shell | frontend / backend |
+| 2026-05-31 | 新增四大高级模块：压力测试模拟器（冲击传导+级联清算）、预测性清算告警（4因子sigmoid概率）、多协议联动（一信号三协议保护）、实时调仓演示（三场景24h动画）；前端扩展至 12 Tab，后端 12 API 端点 | backend / frontend |
