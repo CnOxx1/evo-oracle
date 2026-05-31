@@ -36,39 +36,85 @@ EvoOracle 是 Sui 上的**风险预言机 + 自动调仓引擎**：
 
 ## 3. 评委可以现场看到什么（Demo）
 
-### Demo 1：链上信号面板
-实时展示 SUI / BTC / ETH 的链上风险评分、趋势、资金费率异常、宏观情绪。**数据每 5 分钟从真实交易所更新并上链。**
+### Demo 1：压力测试模拟器（Stress Test）
+输入"BTC 跌 30%"，系统基于 18×18 相关性矩阵 + beta 系数**实时计算**：
+- 全组合各资产预期损失瀑布图
+- 级联清算风险等级
+- 预估清算金额（USD）
 
-### Demo 2：Protected Vault vs Static Vault（核心）
-两个金库并排：
-- **Protected Vault**：读取 EvoOracle，风险评分 > 75 自动减仓、< 30 自动加仓
-- **Static Vault**：固定 50/50，作为对照组
+评委可以拖动滑块改变冲击幅度，看损失如何非线性放大。
 
-评委能看到**资金在动**——风险升高时 Protected 自动把 SUI 仓位从 60% 降到 30%，Static 纹丝不动。
+### Demo 2：预测性清算告警（Predictive Liquidation）
+不是"爆仓了再告诉你"，而是**预测未来 4 小时哪些资产会爆仓**：
+- 4 因子加权模型：OI 增速(30%) + 资金费率方向(25%) + 相关性集中度(20%) + 波动率(25%)
+- Sigmoid 平滑输出概率，避免极端值
+- 全局级联概率 = 单资产概率 × 高风险资产数量放大系数
 
-### Demo 3：LUNA 崩盘历史回测
+### Demo 3：一信号三协议联动（Multi-Protocol Protection）
+**一个 Oracle 风险评分，同时保护三个协议**：
+- Lending：LTV 从 80% 动态收紧至 30%
+- Perp：最大杠杆从 20x 降至 2x
+- Vault：SUI 敞口从 80% 降至 5%
+
+对比展示"有 Oracle 保护" vs "无 Oracle 保护"的参数差异。
+
+### Demo 4：实时调仓动画（Rebalancer Demo）
+三种场景（正常 / 压力 / 崩盘）24 小时时间序列动画：
+- 风险评分曲线 + SUI 仓位曲线双轴联动
+- 每次调仓动作标注触发原因
+- 统计：调仓次数、最高风险、最终仓位
+
+### Demo 5：LUNA 崩盘交互式回测
 用**真实历史数据**复盘 2022-05-07 ~ 05-13：
-- EvoOracle 风险评分如何从 45 一路升到 88
-- Protected Vault 仓位如何随之降低
+- 参数化模拟：用户可调退出阈值、减仓阈值、初始仓位
+- 实时对比 Protected vs Static 策略
 - 最终损失对比：**Protected -8% vs Static -43%**
 
-> 这不是"我们会保护你"，而是"历史数据证明我们保护过"。
+### Demo 6：跨资产风险传导图
+18 个资产的相关性网络图 + 板块轮动分析：
+- 高相关链接（传导风险）vs 负相关链接（对冲机会）
+- 板块级联风险评估
+- 系统性风险评分
 
 ---
 
-## 4. 技术差异化：真实数据，不是 Mock
+## 4. 技术差异化
 
-大多数黑客松项目的信号是硬编码的。**EvoOracle 背后是一套真实运行的市场数据基础设施（EvoQuantV3）：**
+### 4.1 真实数据，不是 Mock
+
+EvoOracle 背后是一套真实运行的市场数据基础设施（EvoQuantV3，100+ REST 接口）：
 
 | 证据链 | 数据内容 |
 | --- | --- |
-| 交易所微观结构 | ticker / orderbook / 资金费率 / 持仓量 / 清算 |
+| 交易所微观结构 | ticker / orderbook / 资金费率 / 持仓量(OI) / 清算 |
 | 期权风险定价 | 波动率曲面 / Gamma / 偏度 |
 | 链上资本流 | 交易所净流量 / 鲸鱼活动 / 稳定币 / TVL |
 | 宏观跨市场 | DXY / 美债利率 / VIX / 纳指 |
 | 新闻与事件 | 情感分类 / 解锁 / 监管 |
+| 相对强弱 | 18 资产 RS 排名 + 板块轮动 |
+| 组合风险 | VaR / 相关性矩阵 / 波动率 |
 
-这套底座有 **42 个 REST 接口、8 条证据链、三域数据库**，已实际运行采集真实数据。EvoOracle 把它的判断送上链。
+### 4.2 算法深度（不是套壳 API）
+
+| 模块 | 核心算法 |
+| --- | --- |
+| 压力测试 | `expected_loss = shock_pct × correlation × beta`，18 资产 beta 建模 + 2x-20x 杠杆均匀分布清算估算 |
+| 清算预测 | 4 因子加权 → sigmoid 平滑：`P = sigmoid((raw - 50) / 15) × 100` |
+| 级联保护 | `risk = (funding_extremity × 0.4 + OI_factor × 0.6) × cascade_multiplier`，cascade_multiplier 基于相关性放大 |
+| 传导图 | 18×18 相关性矩阵 → 图结构（nodes/edges/clusters），板块内相关性 + 动量评分 |
+| 风险评分 | 5 证据链加权合成（波动率 30% + 宏观 20% + 趋势 20% + 资金费率 15% + 情绪 15%） |
+| 调仓演示 | 高斯噪声 + 确定性漂移生成随机风险路径，偏离阈值 > 5% 触发调仓 |
+
+### 4.3 工程完成度
+
+| 指标 | 数量 |
+| --- | --- |
+| 后端引擎模块 | 14 个 |
+| API 端点 | 14 个 |
+| 前端功能 Tab | 12 个 |
+| Move 合约模块 | 5 个 |
+| EvoQuantV3 接口集成 | 30+ |
+| TypeScript 类型定义 | 完整覆盖 |
 
 ---
 
@@ -86,24 +132,34 @@ EvoOracle 是 Sui 上的**风险预言机 + 自动调仓引擎**：
 ## 6. 架构
 
 ```
-EvoQuantV3 数据基座（Python，已运行）
+EvoQuantV3 数据基座（Python，100+ REST 接口，已运行）
     │  REST API @ 127.0.0.1:8000
     ▼
-EvoOracle Bridge（Python 后端）
-    ├── api_client        拉取信号
-    ├── signal_processor  转成链上整数格式
-    └── sui_publisher     提交交易
+EvoOracle Backend（14 个引擎模块）
+    ├── api_client           统一数据拉取
+    ├── risk_composer        5因子可解释评分
+    ├── alert_engine         6类异常检测
+    ├── contagion_engine     跨资产传导图
+    ├── liquidation_shield   级联清算保护
+    ├── whale_signal         鲸鱼行为推断
+    ├── stress_test          压力测试模拟
+    ├── predictive_liq       清算概率预测
+    ├── protocol_aggregator  多协议联动
+    ├── rebalancer_demo      调仓动画数据
+    ├── signal_processor     链上格式转换
+    └── sui_publisher        提交交易
     │
     ▼
-Sui Move 合约
-    ├── oracle::RiskSnapshot   链上风险快照（共享对象）
-    └── risk_vault::Vault      自动调仓金库
+Sui Move 合约（5 个模块）
+    ├── oracle::RiskSnapshot      链上风险快照（共享对象）
+    ├── risk_vault::Vault         自动调仓金库（真实 Balance<SUI>）
+    ├── perp_adapter::PerpMarket  动态最大杠杆
+    ├── lending_adapter::LendingMarket  动态 LTV
+    └── alert::RiskAlert          链上告警事件
     │
     ▼
-前端 Dashboard（React + dapp-kit）
-    ├── 信号面板
-    ├── Vault 对比
-    └── LUNA 回测
+前端 Dashboard（React + TypeScript + Recharts）
+    12 个功能 Tab + zkLogin 登录
 ```
 
 **工程原则**：前后端分离、模块化（每模块独立文件夹 + 文档）、不修改数据基座。
@@ -126,21 +182,23 @@ EvoOracle 是协议层基础设施，变现路径清晰：
 
 ## 8. 已完成 vs 规划（诚实边界）
 
-### 已完成
-- ✅ EvoQuantV3 数据基座（42 个 API，真实数据采集）
-- ✅ EvoOracle 后端 Bridge（拉取 → 转换 → 发布，dry-run 跑通）
-- ✅ Move 合约：Oracle + RiskVault（数据结构 + 风险映射逻辑）
-- ✅ 完整模块化工程结构与文档
+### ✅ 已完成（全部可运行）
+- ✅ EvoQuantV3 数据基座（100+ REST 接口，真实数据采集）
+- ✅ EvoOracle 后端 14 个引擎模块（风险评分 / 传导图 / 清算保护 / 鲸鱼信号 / 压力测试 / 清算预测 / 多协议联动 / 调仓演示 / 告警 / 回测）
+- ✅ FastAPI 服务 14 个端点，带缓存和错误处理
+- ✅ Move 合约 5 个模块：Oracle + RiskVault + PerpAdapter + LendingAdapter + Alert
+- ✅ 前端 12 个功能 Tab + zkLogin 登录
+- ✅ LUNA 崩盘交互式参数化回测
+- ✅ 完整 TypeScript 类型定义 + 暗色主题 UI
 
-### 黑客松期间完成
-- 🔄 合约部署到测试网，Bridge 真实上链
-- 🔄 前端三大面板（信号 / Vault / 回测）
-- 🔄 LUNA 历史回测计算
+### 🔄 优化中
+- 合约部署到 Sui 测试网，Bridge 真实上链
+- 前端 zkLogin 完整流程联调
 
 ### 赛后路线图
-- 借贷协议适配器 SDK（5 行代码接入动态抵押率）
-- 永续合约动态杠杆
-- 接入更多 Sui 生态协议，成为生态风险层
+- 协议适配器 SDK（5 行代码接入动态风险参数）
+- 接入更多 Sui 生态协议（Scallop、Cetus、Turbos）
+- 历史回测扩展：FTX 崩盘、硅谷银行事件
 
 ---
 
