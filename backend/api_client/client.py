@@ -82,6 +82,44 @@ class EvoQuantClient:
     async def get_cross_asset_summary(self) -> dict[str, Any]:
         return await self._get("/cross-asset/summary")
 
+    async def get_correlation_matrix(self) -> dict[str, Any]:
+        return await self._get("/cross-asset/correlation")
+
+    async def get_relative_strength(self) -> dict[str, Any]:
+        return await self._get("/cross-asset/relative-strength")
+
+    async def get_sector_rotation(self) -> dict[str, Any]:
+        return await self._get("/cross-asset/sector-rotation")
+
+    async def get_fund_flow(self) -> dict[str, Any]:
+        return await self._get("/cross-asset/fund-flow")
+
+    async def get_portfolio_risk(self) -> dict[str, Any]:
+        return await self._get("/risk/portfolio/latest")
+
+    async def get_funding_all(self) -> dict[str, Any]:
+        return await self._get("/exchange/funding")
+
+    async def get_funding(self, symbol: str) -> dict[str, Any]:
+        return await self._get(f"/exchange/funding/{symbol}")
+
+    # ---- 清算 / OI（待 EvoQuantV3 数据就绪） ----
+    async def get_liquidations(self, symbol: str) -> dict[str, Any]:
+        return await self._get(f"/exchange/liquidations/{symbol}")
+
+    async def get_liquidation_surges(self) -> dict[str, Any]:
+        return await self._get("/monitor/liquidation-surges")
+
+    async def get_open_interest(self, symbol: str) -> dict[str, Any]:
+        return await self._get(f"/exchange/open-interest/{symbol}")
+
+    # ---- 链上鲸鱼（待 EvoQuantV3 数据就绪） ----
+    async def get_whale_activity(self, symbol: str) -> dict[str, Any]:
+        return await self._get(f"/onchain/whale-activity/{symbol}")
+
+    async def get_exchange_flow(self, symbol: str) -> dict[str, Any]:
+        return await self._get(f"/onchain/exchange-flow/{symbol}")
+
     # ---- 历史回测 ----
     async def get_time_slice_range(
         self,
