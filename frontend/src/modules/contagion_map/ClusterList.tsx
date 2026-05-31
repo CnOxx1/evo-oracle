@@ -4,10 +4,10 @@ interface ClusterListProps {
   clusters: ContagionCluster[];
 }
 
-const riskColors: Record<string, string> = {
-  high: "var(--color-risk-high)",
-  medium: "var(--color-risk-medium)",
-  low: "var(--color-risk-low)",
+const riskBgClasses: Record<string, string> = {
+  high: "bg-risk-high",
+  medium: "bg-risk-medium",
+  low: "bg-risk-low",
 };
 
 const phaseLabels: Record<string, string> = {
@@ -27,8 +27,7 @@ export function ClusterList({ clusters }: ClusterListProps) {
             <div className="flex justify-between items-center mb-2">
               <span className="font-semibold text-sm">{c.sector}</span>
               <span
-                className="px-1.5 py-0.5 rounded text-[0.6rem] font-bold text-black"
-                style={{ background: riskColors[c.contagion_risk] || "var(--color-text-secondary)" }}
+                className={`px-1.5 py-0.5 rounded text-[0.6rem] font-bold text-black ${riskBgClasses[c.contagion_risk] || "bg-text-secondary"}`}
               >
                 {c.contagion_risk}
               </span>
@@ -41,11 +40,8 @@ export function ClusterList({ clusters }: ClusterListProps) {
             </div>
             <div className="h-0.5 bg-bg-primary rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full"
-                style={{
-                  width: `${Math.min(c.contagion_score * 100, 100)}%`,
-                  background: riskColors[c.contagion_risk],
-                }}
+                className={`h-full rounded-full ${riskBgClasses[c.contagion_risk] || "bg-text-secondary"}`}
+                style={{ width: `${Math.min(c.contagion_score * 100, 100)}%` }}
               />
             </div>
           </div>

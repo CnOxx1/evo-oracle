@@ -24,17 +24,9 @@ export function LandingPage({ onEnter }: LandingPageProps) {
     <div className="min-h-screen w-full">
       {/* Hero Section */}
       <section className="min-h-screen flex flex-col items-center justify-center text-center px-4 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-20" style={{
-          background: "radial-gradient(ellipse at 50% 30%, rgba(108,99,255,0.4) 0%, transparent 60%)",
-        }} />
+        <div className="absolute inset-0 opacity-20 hero-gradient-bg" />
         <div className="relative z-10 animate-fade-in">
-          <h1 className="text-6xl md:text-8xl font-black mb-4" style={{
-            background: "linear-gradient(135deg, #6c63ff 0%, #3b82f6 40%, #8b5cf6 70%, #6c63ff 100%)",
-            backgroundSize: "200% 200%",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            animation: "gradientShift 4s ease infinite",
-          }}>
+          <h1 className="text-6xl md:text-8xl font-black mb-4 hero-title-gradient">
             EvoOracle
           </h1>
           <p className="text-xl md:text-2xl text-text-secondary mb-2 font-medium">
@@ -91,8 +83,8 @@ export function LandingPage({ onEnter }: LandingPageProps) {
         </h2>
         <div className="grid md:grid-cols-3 gap-4 relative">
           {/* Connection lines (desktop) */}
-          <div className="hidden md:block absolute top-1/2 left-1/3 w-1/3 h-0.5 bg-gradient-to-r from-accent to-accent-blue" style={{ transform: "translateY(-50%)" }} />
-          <div className="hidden md:block absolute top-1/2 left-2/3 w-1/3 h-0.5 bg-gradient-to-r from-accent-blue to-purple-500" style={{ transform: "translateY(-50%)" }} />
+          <div className="hidden md:block absolute top-1/2 left-1/3 w-1/3 h-0.5 bg-gradient-to-r from-accent to-accent-blue connection-line" />
+          <div className="hidden md:block absolute top-1/2 left-2/3 w-1/3 h-0.5 bg-gradient-to-r from-accent-blue to-purple-500 connection-line" />
           <StepCard num="01" title="数据聚合" desc="多源价格 + 链上指标实时采集" />
           <StepCard num="02" title="风险评分" desc="EvoQuantV3 模型动态计算风险分" />
           <StepCard num="03" title="协议联动" desc="自动调整 LTV / 触发预警 / 调仓" />
@@ -129,25 +121,25 @@ export function LandingPage({ onEnter }: LandingPageProps) {
           实时<span className="gradient-text">数据</span>
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <div className="glass-card p-8 text-center glow-border" style={{ animation: "float 3s ease-in-out infinite" }}>
+          <div className="glass-card p-8 text-center glow-border animate-float">
             <div className="text-5xl font-black gradient-text mb-2">
               {stats?.system_risk_score ?? "—"}
             </div>
             <div className="text-text-secondary">系统风险分</div>
           </div>
-          <div className="glass-card p-8 text-center glow-border" style={{ animation: "float 3s ease-in-out infinite 0.5s" }}>
+          <div className="glass-card p-8 text-center glow-border animate-float-delay-1">
             <div className="text-5xl font-black gradient-text mb-2">
               {stats?.tracked_assets ?? "—"}
             </div>
             <div className="text-text-secondary">追踪资产数</div>
           </div>
-          <div className="glass-card p-8 text-center glow-border" style={{ animation: "float 3s ease-in-out infinite 1s" }}>
+          <div className="glass-card p-8 text-center glow-border animate-float-delay-2">
             <div className="text-5xl font-black gradient-text mb-2">
               {stats?.active_alerts ?? "—"}
             </div>
             <div className="text-text-secondary">活跃告警</div>
           </div>
-          <div className="glass-card p-8 text-center glow-border" style={{ animation: "float 3s ease-in-out infinite 1.5s" }}>
+          <div className="glass-card p-8 text-center glow-border animate-float-delay-3">
             <div className="text-5xl font-black gradient-text mb-2">21</div>
             <div className="text-text-secondary">功能模块</div>
           </div>
@@ -159,19 +151,19 @@ export function LandingPage({ onEnter }: LandingPageProps) {
           系统<span className="gradient-text">架构</span>
         </h2>
         <div className="grid md:grid-cols-3 gap-6">
-          <div className="glass-card p-6 glow-border text-center" style={{ animation: "slideInLeft 0.6s ease-out" }}>
+          <div className="glass-card p-6 glow-border text-center animate-slide-in-left">
             <div className="text-accent text-2xl mb-3">⬡</div>
             <h3 className="font-bold text-lg mb-2">Frontend</h3>
             <p className="text-text-secondary text-sm">React + Tailwind + Vite</p>
             <p className="text-text-secondary text-sm">21 模块实时仪表盘</p>
           </div>
-          <div className="glass-card p-6 glow-border text-center" style={{ animation: "fadeIn 0.6s ease-out 0.2s both" }}>
+          <div className="glass-card p-6 glow-border text-center animate-fade-in-delay">
             <div className="text-accent-blue text-2xl mb-3">⚙️</div>
             <h3 className="font-bold text-lg mb-2">Backend</h3>
             <p className="text-text-secondary text-sm">FastAPI + EvoQuantV3 + SQLite</p>
             <p className="text-text-secondary text-sm">风险模型 + 历史存储 + 定时调度</p>
           </div>
-          <div className="glass-card p-6 glow-border text-center" style={{ animation: "slideInRight 0.6s ease-out 0.4s both" }}>
+          <div className="glass-card p-6 glow-border text-center animate-slide-in-right">
             <div className="text-purple-400 text-2xl mb-3">📜</div>
             <h3 className="font-bold text-lg mb-2">Smart Contracts</h3>
             <p className="text-text-secondary text-sm">Sui Move</p>
@@ -234,7 +226,7 @@ export function LandingPage({ onEnter }: LandingPageProps) {
   );
 }
 
-{/* Helper Components */}
+/* Helper Components */
 function StepCard({ num, title, desc }: { num: string; title: string; desc: string }) {
   return (
     <div className="glass-card p-6 text-center relative z-10">

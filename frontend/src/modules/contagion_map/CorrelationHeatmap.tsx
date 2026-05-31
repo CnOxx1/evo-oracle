@@ -5,6 +5,27 @@ interface CorrelationHeatmapProps {
   nodes: ContagionNode[];
 }
 
+function edgeBorderClass(edge: ContagionEdge): string {
+  if (edge.risk_type === "contagion") {
+    return edge.strength === "strong" ? "border-l-risk-critical" : "border-l-risk-high";
+  }
+  return "border-l-risk-low";
+}
+
+function edgeTextClass(edge: ContagionEdge): string {
+  if (edge.risk_type === "contagion") {
+    return edge.strength === "strong" ? "text-risk-critical" : "text-risk-high";
+  }
+  return "text-risk-low";
+}
+
+function edgeBgClass(edge: ContagionEdge): string {
+  if (edge.risk_type === "contagion") {
+    return edge.strength === "strong" ? "bg-risk-critical" : "bg-risk-high";
+  }
+  return "bg-risk-low";
+}
+
 export function CorrelationHeatmap({ edges, nodes }: CorrelationHeatmapProps) {
   const topEdges = edges.slice(0, 20);
 
@@ -13,26 +34,22 @@ export function CorrelationHeatmap({ edges, nodes }: CorrelationHeatmapProps) {
       <h4 className="text-sm text-text-secondary font-semibold mb-4">高相关性链路 (|r| &ge; 0.7)</h4>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
         {topEdges.map((edge, i) => {
-          const isStrong = edge.strength === "strong";
-          const color = edge.risk_type === "contagion"
-            ? isStrong ? "var(--color-risk-critical)" : "var(--color-risk-high)"
-            : "var(--color-risk-low)";
           const opacity = Math.abs(edge.correlation);
 
           return (
-            <div key={i} className="bg-bg-secondary border-l-3 rounded p-2" style={{ borderLeftColor: color }}>
+            <div key={i} className={`bg-bg-secondary border-l-3 rounded p-2 ${edgeBorderClass(edge)}`}>
               <div className="flex items-center gap-1.5 mb-1">
                 <span className="font-semibold text-xs">{edge.source}</span>
-                <span className="text-sm" style={{ color }}>
+                <span className={`text-sm ${edgeTextClass(edge)}`}>
                   {edge.risk_type === "contagion" ? "↔" : "⇋"}
                 </span>
                 <span className="font-semibold text-xs">{edge.target}</span>
               </div>
               <div className="h-0.5 bg-bg-primary rounded-full overflow-hidden mb-1">
-                <div className="h-full rounded-full" style={{ width: `${opacity * 100}%`, background: color }} />
+                <div className={`h-full rounded-full ${edgeBgClass(edge)}`} style={{ width: `${opacity * 100}%` }} />
               </div>
               <div className="flex justify-between text-[0.7rem]">
-                <span style={{ color }}>{edge.correlation.toFixed(3)}</span>
+                <span className={edgeTextClass(edge)}>{edge.correlation.toFixed(3)}</span>
                 <span className={`px-1 rounded text-[0.6rem] font-bold ${
                   edge.risk_type === "contagion" ? "bg-risk-high/20 text-risk-high" : "bg-risk-low/20 text-risk-low"
                 }`}>

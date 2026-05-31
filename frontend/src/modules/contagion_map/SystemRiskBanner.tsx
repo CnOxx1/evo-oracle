@@ -4,23 +4,31 @@ interface SystemRiskBannerProps {
   risk: SystemRisk;
 }
 
-const levelColors: Record<string, string> = {
-  critical: "var(--color-risk-critical)",
-  high: "var(--color-risk-high)",
-  medium: "var(--color-risk-medium)",
-  low: "var(--color-risk-low)",
+const levelBorderClass: Record<string, string> = {
+  critical: "border-l-risk-critical",
+  high: "border-l-risk-high",
+  medium: "border-l-risk-medium",
+  low: "border-l-risk-low",
+};
+
+const levelTextClass: Record<string, string> = {
+  critical: "text-risk-critical",
+  high: "text-risk-high",
+  medium: "text-risk-medium",
+  low: "text-risk-low",
 };
 
 export function SystemRiskBanner({ risk }: SystemRiskBannerProps) {
-  const color = levelColors[risk.level] || "var(--color-text-secondary)";
+  const borderCls = levelBorderClass[risk.level] || "border-l-text-secondary";
+  const textCls = levelTextClass[risk.level] || "text-text-secondary";
 
   return (
-    <div className="glass-card p-4 mb-6 border-l-4" style={{ borderLeftColor: color }}>
+    <div className={`glass-card p-4 mb-6 border-l-4 ${borderCls}`}>
       <div className="flex items-center gap-3 mb-2">
-        <span className="text-3xl font-bold" style={{ color }}>
+        <span className={`text-3xl font-bold ${textCls}`}>
           {risk.score.toFixed(0)}
         </span>
-        <span className="text-sm font-bold" style={{ color }}>
+        <span className={`text-sm font-bold ${textCls}`}>
           {risk.level.toUpperCase()}
         </span>
       </div>

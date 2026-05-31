@@ -1,5 +1,5 @@
 import { RiskContribution } from "../../api/client";
-import { riskColor, scoreToLevel } from "../../lib/format";
+import { riskBgClass, scoreToLevel } from "../../lib/format";
 import { DriverTags } from "./DriverTags";
 
 interface ContributionBarProps {
@@ -18,8 +18,8 @@ export function ContributionBar({ item }: ContributionBarProps) {
       </div>
       <div className="h-2 rounded-full bg-bg-secondary overflow-hidden">
         <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${pct}%`, background: riskColor(level) }}
+          className={`h-full rounded-full transition-all duration-500 ${riskBgClass(level)}`}
+          style={{ width: `${pct}%` }}
         />
       </div>
       <div className="text-xs text-text-secondary">

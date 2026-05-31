@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { riskColor, riskTextClass } from "../../lib/format";
 
 interface AssetLoss {
   symbol: string;
@@ -39,15 +40,6 @@ export function StressTest() {
       return res.json();
     },
   });
-
-  const riskColor = (level: string) => {
-    switch (level) {
-      case "critical": return "var(--color-risk-critical)";
-      case "high": return "var(--color-risk-high)";
-      case "medium": return "var(--color-risk-medium)";
-      default: return "var(--color-risk-low)";
-    }
-  };
 
   return (
     <section className="animate-fade-in max-w-[900px]">
@@ -113,7 +105,7 @@ export function StressTest() {
             </div>
             <div className="glass-card p-4 glow-border-hover">
               <span className="block text-xs text-text-secondary mb-1">级联清算风险</span>
-              <span className="text-2xl font-bold" style={{ color: riskColor(data.cascade_risk_level) }}>
+              <span className={`text-2xl font-bold ${riskTextClass(data.cascade_risk_level)}`}>
                 {data.cascade_risk_level.toUpperCase()}
               </span>
             </div>
@@ -135,10 +127,10 @@ export function StressTest() {
                       key={idx}
                       fill={
                         Math.abs(entry.expected_loss_pct) > 15
-                          ? "var(--color-risk-high)"
+                          ? riskColor("high")
                           : Math.abs(entry.expected_loss_pct) > 8
-                          ? "var(--color-risk-medium)"
-                          : "var(--color-risk-low)"
+                          ? riskColor("medium")
+                          : riskColor("low")
                       }
                     />
                   ))}

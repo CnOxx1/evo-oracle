@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../api/client";
-import { riskColor } from "../../lib/format";
+import { riskTextClass } from "../../lib/format";
 import { ContributionBar } from "./ContributionBar";
 
 interface RiskBreakdownProps {
@@ -24,10 +24,10 @@ export function RiskBreakdown({ symbol }: RiskBreakdownProps) {
       <div>
         <h2 className="text-2xl font-bold gradient-text">{data.symbol} 风险分解</h2>
         <div className="flex items-center gap-4 mt-2">
-          <span className="text-lg font-bold" style={{ color: riskColor(data.risk_level) }}>
+          <span className={`text-lg font-bold ${riskTextClass(data.risk_level)}`}>
             综合评分: {data.composite_score.toFixed(1)}
           </span>
-          <span className="px-3 py-1 rounded-full text-sm font-bold bg-bg-secondary" style={{ color: riskColor(data.risk_level) }}>
+          <span className={`px-3 py-1 rounded-full text-sm font-bold bg-bg-secondary ${riskTextClass(data.risk_level)}`}>
             {data.risk_level.toUpperCase()}
           </span>
         </div>

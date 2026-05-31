@@ -29,20 +29,27 @@ export function PredictiveLiq() {
     },
   });
 
-  const riskColor = (level: string) => {
+  const riskTextClass = (level: string) => {
     switch (level) {
-      case "critical": return "var(--color-risk-critical)";
-      case "high": return "var(--color-risk-high)";
-      case "medium": return "var(--color-risk-medium)";
-      default: return "var(--color-risk-low)";
+      case "critical": return "text-risk-critical";
+      case "high": return "text-risk-high";
+      case "medium": return "text-risk-medium";
+      default: return "text-risk-low";
     }
   };
 
-  const probColor = (prob: number) => {
-    if (prob >= 0.7) return "var(--color-risk-critical)";
-    if (prob >= 0.5) return "var(--color-risk-high)";
-    if (prob >= 0.3) return "var(--color-risk-medium)";
-    return "var(--color-risk-low)";
+  const probTextClass = (prob: number) => {
+    if (prob >= 0.7) return "text-risk-critical";
+    if (prob >= 0.5) return "text-risk-high";
+    if (prob >= 0.3) return "text-risk-medium";
+    return "text-risk-low";
+  };
+
+  const probBgClass = (prob: number) => {
+    if (prob >= 0.7) return "bg-risk-critical";
+    if (prob >= 0.5) return "bg-risk-high";
+    if (prob >= 0.3) return "bg-risk-medium";
+    return "bg-risk-low";
   };
 
   if (isLoading) return <div className="text-center py-8 text-text-secondary animate-pulse">加载清算预测...</div>;
@@ -59,14 +66,12 @@ export function PredictiveLiq() {
       <div className="glass-card p-5 mb-6 flex items-center gap-4">
         <span className="text-sm text-text-secondary">全局级联概率</span>
         <span
-          className="text-3xl font-bold"
-          style={{ color: riskColor(data?.cascade_risk_level ?? "low") }}
+          className={`text-3xl font-bold ${riskTextClass(data?.cascade_risk_level ?? "low")}`}
         >
           {((data?.cascade_probability ?? 0) * 100).toFixed(1)}%
         </span>
         <span
-          className="text-sm font-bold uppercase"
-          style={{ color: riskColor(data?.cascade_risk_level ?? "low") }}
+          className={`text-sm font-bold uppercase ${riskTextClass(data?.cascade_risk_level ?? "low")}`}
         >
           {data?.cascade_risk_level?.toUpperCase()}
         </span>
@@ -77,17 +82,14 @@ export function PredictiveLiq() {
           <div key={asset.symbol} className="glass-card p-4">
             <div className="flex justify-between items-center mb-2">
               <span className="font-bold text-sm">{asset.symbol}</span>
-              <span className="font-bold" style={{ color: probColor(asset.liquidation_probability) }}>
+              <span className={`font-bold ${probTextClass(asset.liquidation_probability)}`}>
                 {(asset.liquidation_probability * 100).toFixed(1)}%
               </span>
             </div>
             <div className="h-1 bg-bg-secondary rounded-full overflow-hidden mb-2">
               <div
-                className="h-full rounded-full transition-all duration-300"
-                style={{
-                  width: `${asset.liquidation_probability * 100}%`,
-                  background: probColor(asset.liquidation_probability),
-                }}
+                className={`h-full rounded-full transition-all duration-300 ${probBgClass(asset.liquidation_probability)}`}
+                style={{ width: `${asset.liquidation_probability * 100}%` }}
               />
             </div>
             <div className="flex gap-2 flex-wrap">

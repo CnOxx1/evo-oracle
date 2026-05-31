@@ -4,11 +4,18 @@ interface SignalListProps {
   signals: WhaleSignal[];
 }
 
-const actionColors: Record<string, string> = {
-  accumulating: "var(--color-risk-low)",
-  distributing: "var(--color-risk-high)",
-  repositioning: "var(--color-risk-medium)",
-  inactive: "var(--color-text-secondary)",
+const actionBorderClasses: Record<string, string> = {
+  accumulating: "border-l-risk-low",
+  distributing: "border-l-risk-high",
+  repositioning: "border-l-risk-medium",
+  inactive: "border-l-text-secondary",
+};
+
+const actionTextClasses: Record<string, string> = {
+  accumulating: "text-risk-low",
+  distributing: "text-risk-high",
+  repositioning: "text-risk-medium",
+  inactive: "text-text-secondary",
 };
 
 const actionLabels: Record<string, string> = {
@@ -27,12 +34,10 @@ export function SignalList({ signals }: SignalListProps) {
       <h4 className="text-sm text-text-secondary font-semibold mb-4">鲸鱼活动信号</h4>
       <div className="flex flex-col gap-2">
         {active.map((s) => (
-          <div key={s.symbol} className="bg-bg-secondary border-l-3 rounded p-3"
-            style={{ borderLeftColor: actionColors[s.whale_action] }}>
+          <div key={s.symbol} className={`bg-bg-secondary border-l-3 rounded p-3 ${actionBorderClasses[s.whale_action] || "border-l-text-secondary"}`}>
             <div className="flex items-center gap-3 mb-1">
               <span className="font-bold text-sm">{s.symbol}</span>
-              <span className="text-xs font-semibold"
-                style={{ color: actionColors[s.whale_action] }}>
+              <span className={`text-xs font-semibold ${actionTextClasses[s.whale_action] || "text-text-secondary"}`}>
                 {actionLabels[s.whale_action]}
               </span>
               <span className="ml-auto text-sm text-text-secondary">

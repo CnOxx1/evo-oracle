@@ -5,20 +5,20 @@ interface WhaleBiasBannerProps {
   distributing: number;
 }
 
-const biasConfig: Record<string, { color: string; icon: string }> = {
-  distribution: { color: "var(--color-risk-high)", icon: "↓" },
-  accumulation: { color: "var(--color-risk-low)", icon: "↑" },
-  mixed: { color: "var(--color-risk-medium)", icon: "↔" },
+const biasConfig: Record<string, { borderCls: string; textCls: string; icon: string }> = {
+  distribution: { borderCls: "border-l-risk-high", textCls: "text-risk-high", icon: "↓" },
+  accumulation: { borderCls: "border-l-risk-low", textCls: "text-risk-low", icon: "↑" },
+  mixed: { borderCls: "border-l-risk-medium", textCls: "text-risk-medium", icon: "↔" },
 };
 
 export function WhaleBiasBanner({ bias, implication, accumulating, distributing }: WhaleBiasBannerProps) {
   const cfg = biasConfig[bias] || biasConfig.mixed;
 
   return (
-    <div className="glass-card p-4 mb-6 border-l-4" style={{ borderLeftColor: cfg.color }}>
+    <div className={`glass-card p-4 mb-6 border-l-4 ${cfg.borderCls}`}>
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-2xl" style={{ color: cfg.color }}>{cfg.icon}</span>
-        <span className="text-base font-bold" style={{ color: cfg.color }}>
+        <span className={`text-2xl ${cfg.textCls}`}>{cfg.icon}</span>
+        <span className={`text-base font-bold ${cfg.textCls}`}>
           {bias.toUpperCase()}
         </span>
       </div>

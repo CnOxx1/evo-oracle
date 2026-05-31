@@ -5,19 +5,67 @@ export function decodeRiskScore(raw: number): number {
   return raw / 100;
 }
 
-/** 风险等级 → CSS 变量名 */
+/** 风险等级 → CSS 变量名 (legacy, kept for chart fills) */
 export function riskColor(level: string): string {
   switch (level) {
     case "low":
-      return "var(--risk-low)";
+      return "var(--color-risk-low)";
     case "medium":
-      return "var(--risk-medium)";
+      return "var(--color-risk-medium)";
     case "high":
-      return "var(--risk-high)";
+      return "var(--color-risk-high)";
     case "critical":
-      return "var(--risk-critical)";
+      return "var(--color-risk-critical)";
     default:
-      return "var(--text-secondary)";
+      return "var(--color-text-secondary)";
+  }
+}
+
+/** 风险等级 → Tailwind text color class */
+export function riskTextClass(level: string): string {
+  switch (level) {
+    case "low":
+      return "text-risk-low";
+    case "medium":
+      return "text-risk-medium";
+    case "high":
+      return "text-risk-high";
+    case "critical":
+      return "text-risk-critical";
+    default:
+      return "text-text-secondary";
+  }
+}
+
+/** 风险等级 → Tailwind bg color class */
+export function riskBgClass(level: string): string {
+  switch (level) {
+    case "low":
+      return "bg-risk-low";
+    case "medium":
+      return "bg-risk-medium";
+    case "high":
+      return "bg-risk-high";
+    case "critical":
+      return "bg-risk-critical";
+    default:
+      return "bg-text-secondary";
+  }
+}
+
+/** 风险等级 → Tailwind border-l color class */
+export function riskBorderLClass(level: string): string {
+  switch (level) {
+    case "low":
+      return "border-l-risk-low";
+    case "medium":
+      return "border-l-risk-medium";
+    case "high":
+      return "border-l-risk-high";
+    case "critical":
+      return "border-l-risk-critical";
+    default:
+      return "border-l-text-secondary";
   }
 }
 

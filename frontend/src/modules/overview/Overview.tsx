@@ -34,12 +34,21 @@ export function Overview() {
     refetchInterval: 30000,
   });
 
-  const riskColor = (level: string) => {
+  const riskTextClass = (level: string) => {
     switch (level) {
-      case "critical": return "var(--color-risk-critical)";
-      case "high": return "var(--color-risk-high)";
-      case "medium": return "var(--color-risk-medium)";
-      default: return "var(--color-risk-low)";
+      case "critical": return "text-risk-critical";
+      case "high": return "text-risk-high";
+      case "medium": return "text-risk-medium";
+      default: return "text-risk-low";
+    }
+  };
+
+  const riskBorderClass = (level: string) => {
+    switch (level) {
+      case "critical": return "border-risk-critical";
+      case "high": return "border-risk-high";
+      case "medium": return "border-risk-medium";
+      default: return "border-risk-low";
     }
   };
 
@@ -80,21 +89,20 @@ export function Overview() {
       <div className="flex flex-col md:flex-row items-center gap-8">
         <div className="relative flex-shrink-0">
           <div
-            className="w-36 h-36 rounded-full border-4 flex flex-col items-center justify-center glow-border"
-            style={{ borderColor: riskColor(data.system_risk_level) }}
+            className={`w-36 h-36 rounded-full border-4 flex flex-col items-center justify-center glow-border ${riskBorderClass(data.system_risk_level)}`}
           >
             <span className="text-4xl font-bold text-text-primary">{data.system_risk_score}</span>
             <span className="text-xs text-text-secondary mt-1">系统风险</span>
           </div>
         </div>
         <div className="flex flex-col gap-2">
-          <span className="text-2xl font-bold" style={{ color: riskColor(data.system_risk_level) }}>
+          <span className={`text-2xl font-bold ${riskTextClass(data.system_risk_level)}`}>
             {data.system_risk_level.toUpperCase()}
           </span>
           <span className="text-text-secondary">宏观: {macroLabel(data.macro_stance)}</span>
           <span className="text-text-secondary">
             数据源:{" "}
-            <span style={{ color: data.data_source_status === "online" ? "var(--color-risk-low)" : "var(--color-risk-high)" }}>
+            <span className={data.data_source_status === "online" ? "text-risk-low" : "text-risk-high"}>
               {data.data_source_status === "online" ? "在线" : "离线"}
             </span>
           </span>
@@ -112,13 +120,13 @@ export function Overview() {
         </div>
         <div className="glass-card p-5 text-center">
           <span className="text-xs text-text-secondary block mb-1">高风险资产</span>
-          <span className="text-2xl font-bold" style={{ color: data.high_risk_asset_count > 0 ? "var(--color-risk-high)" : "var(--color-risk-low)" }}>
+          <span className={`text-2xl font-bold ${data.high_risk_asset_count > 0 ? "text-risk-high" : "text-risk-low"}`}>
             {data.high_risk_asset_count} / {data.total_tracked_assets}
           </span>
         </div>
         <div className="glass-card p-5 text-center">
           <span className="text-xs text-text-secondary block mb-1">活跃告警</span>
-          <span className="text-2xl font-bold" style={{ color: data.active_alerts > 3 ? "var(--color-risk-high)" : "var(--color-text-primary)" }}>
+          <span className={`text-2xl font-bold ${data.active_alerts > 3 ? "text-risk-high" : "text-text-primary"}`}>
             {data.active_alerts}
           </span>
         </div>

@@ -4,11 +4,18 @@ interface AssetRiskTableProps {
   assets: LiquidationAsset[];
 }
 
-const levelColors: Record<string, string> = {
-  critical: "var(--color-risk-critical)",
-  high: "var(--color-risk-high)",
-  medium: "var(--color-risk-medium)",
-  low: "var(--color-risk-low)",
+const levelBgClasses: Record<string, string> = {
+  critical: "bg-risk-critical",
+  high: "bg-risk-high",
+  medium: "bg-risk-medium",
+  low: "bg-risk-low",
+};
+
+const levelTextClasses: Record<string, string> = {
+  critical: "text-risk-critical",
+  high: "text-risk-high",
+  medium: "text-risk-medium",
+  low: "text-risk-low",
 };
 
 export function AssetRiskTable({ assets }: AssetRiskTableProps) {
@@ -21,14 +28,11 @@ export function AssetRiskTable({ assets }: AssetRiskTableProps) {
             <span className="font-semibold text-sm min-w-[50px]">{a.symbol}</span>
             <div className="flex-1 h-1 bg-bg-secondary rounded-full overflow-hidden">
               <div
-                className="h-full rounded-full transition-all duration-300"
-                style={{
-                  width: `${a.liquidation_risk_score}%`,
-                  background: levelColors[a.risk_level] || "var(--color-text-secondary)",
-                }}
+                className={`h-full rounded-full transition-all duration-300 ${levelBgClasses[a.risk_level] || "bg-text-secondary"}`}
+                style={{ width: `${a.liquidation_risk_score}%` }}
               />
             </div>
-            <span className="font-bold text-sm min-w-[30px] text-right" style={{ color: levelColors[a.risk_level] }}>
+            <span className={`font-bold text-sm min-w-[30px] text-right ${levelTextClasses[a.risk_level] || "text-text-secondary"}`}>
               {a.liquidation_risk_score.toFixed(0)}
             </span>
             <span className="text-[0.7rem] text-text-secondary min-w-[70px]">

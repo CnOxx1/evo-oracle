@@ -6,19 +6,19 @@ interface ShieldStatusProps {
 }
 
 const statusConfig = {
-  active: { color: "var(--color-risk-critical)", label: "ACTIVE", icon: "⚠" },
-  warning: { color: "var(--color-risk-medium)", label: "WARNING", icon: "△" },
-  safe: { color: "var(--color-risk-low)", label: "SAFE", icon: "✓" },
+  active: { borderCls: "border-l-risk-critical", textCls: "text-risk-critical", label: "ACTIVE", icon: "⚠" },
+  warning: { borderCls: "border-l-risk-medium", textCls: "text-risk-medium", label: "WARNING", icon: "△" },
+  safe: { borderCls: "border-l-risk-low", textCls: "text-risk-low", label: "SAFE", icon: "✓" },
 };
 
 export function ShieldStatus({ status, action, cascadeRisk, context }: ShieldStatusProps) {
   const cfg = statusConfig[status];
 
   return (
-    <div className="glass-card p-5 mb-6 border-l-4" style={{ borderLeftColor: cfg.color }}>
+    <div className={`glass-card p-5 mb-6 border-l-4 ${cfg.borderCls}`}>
       <div className="flex items-center gap-3 mb-2">
-        <span className="text-2xl" style={{ color: cfg.color }}>{cfg.icon}</span>
-        <span className="text-base font-bold" style={{ color: cfg.color }}>{cfg.label}</span>
+        <span className={`text-2xl ${cfg.textCls}`}>{cfg.icon}</span>
+        <span className={`text-base font-bold ${cfg.textCls}`}>{cfg.label}</span>
         <span className="ml-auto text-sm text-text-secondary">
           级联风险: {cascadeRisk.score.toFixed(0)}/100
         </span>

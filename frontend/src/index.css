@@ -104,6 +104,71 @@
   .gradient-bar {
     background: linear-gradient(90deg, #6c63ff, #3b82f6, #8b5cf6);
   }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-float-delay-1 {
+    animation: float 3s ease-in-out infinite 0.5s;
+  }
+
+  .animate-float-delay-2 {
+    animation: float 3s ease-in-out infinite 1s;
+  }
+
+  .animate-float-delay-3 {
+    animation: float 3s ease-in-out infinite 1.5s;
+  }
+
+  .animate-slide-in-left {
+    animation: slideInLeft 0.6s ease-out;
+  }
+
+  .animate-slide-in-right {
+    animation: slideInRight 0.6s ease-out 0.4s both;
+  }
+
+  .animate-fade-in-delay {
+    animation: fadeIn 0.6s ease-out 0.2s both;
+  }
+
+  .hero-gradient-bg {
+    background: radial-gradient(ellipse at 50% 30%, rgba(108,99,255,0.4) 0%, transparent 60%);
+  }
+
+  .hero-title-gradient {
+    background: linear-gradient(135deg, #6c63ff 0%, #3b82f6 40%, #8b5cf6 70%, #6c63ff 100%);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradientShift 4s ease infinite;
+  }
+
+  .border-l-risk-critical { border-left-color: var(--color-risk-critical); }
+  .border-l-risk-high { border-left-color: var(--color-risk-high); }
+  .border-l-risk-medium { border-left-color: var(--color-risk-medium); }
+  .border-l-risk-low { border-left-color: var(--color-risk-low); }
+
+  .text-dynamic-risk-critical { color: var(--color-risk-critical); }
+  .text-dynamic-risk-high { color: var(--color-risk-high); }
+  .text-dynamic-risk-medium { color: var(--color-risk-medium); }
+  .text-dynamic-risk-low { color: var(--color-risk-low); }
+  .text-dynamic-text-secondary { color: var(--color-text-secondary); }
+
+  .bg-dynamic-risk-critical { background: var(--color-risk-critical); }
+  .bg-dynamic-risk-high { background: var(--color-risk-high); }
+  .bg-dynamic-risk-medium { background: var(--color-risk-medium); }
+  .bg-dynamic-risk-low { background: var(--color-risk-low); }
+
+  .bg-severity-info { background: var(--color-severity-info); }
+  .bg-severity-warning { background: var(--color-severity-warning); }
+  .bg-severity-critical { background: var(--color-severity-critical); }
+
+  .connection-line {
+    transform: translateY(-50%);
+  }
 }
 
 /* ─── Keyframes ─── */
