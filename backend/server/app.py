@@ -348,8 +348,6 @@ async def whale_signals() -> dict[str, Any]:
 
     _cache_set(cache_key, result)
     return result
-    _cache_set(cache_key, result)
-    return result
 
 
 @app.get("/api/stress-test")
