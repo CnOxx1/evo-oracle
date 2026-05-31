@@ -1071,3 +1071,186 @@ button:hover {
   font-size: 0.75rem;
   color: var(--text-secondary);
 }
+
+/* ─── Stress Test ─── */
+.stress-test { max-width: 900px; }
+.stress-test__title { font-size: 1.25rem; margin-bottom: 1rem; }
+.stress-test__controls {
+  display: flex; gap: 1.5rem; align-items: flex-end;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+.stress-test__label {
+  display: flex; flex-direction: column; gap: 0.4rem;
+  font-size: 0.85rem; color: var(--text-secondary);
+}
+.stress-test__select {
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  border-radius: 6px; padding: 0.5rem; color: var(--text-primary);
+}
+.stress-test__slider { width: 200px; accent-color: var(--accent); }
+.stress-test__summary {
+  display: flex; gap: 1.5rem; margin-bottom: 1.5rem;
+}
+.stress-test__metric {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem 1.5rem; flex: 1;
+}
+.stress-test__metric-label {
+  display: block; font-size: 0.75rem;
+  color: var(--text-secondary); margin-bottom: 0.3rem;
+}
+.stress-test__metric-value { font-size: 1.5rem; font-weight: 700; }
+.stress-test__chart {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1.25rem;
+}
+.stress-test__chart h3 {
+  font-size: 0.875rem; color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+}
+
+/* ─── Predictive Liquidation ─── */
+.predictive-liq { max-width: 900px; }
+.predictive-liq__title { font-size: 1.25rem; margin-bottom: 1rem; }
+.predictive-liq__global {
+  display: flex; align-items: center; gap: 1rem;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;
+}
+.predictive-liq__global-label {
+  font-size: 0.85rem; color: var(--text-secondary);
+}
+.predictive-liq__global-value { font-size: 2rem; font-weight: 700; }
+.predictive-liq__global-level {
+  font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
+}
+.predictive-liq__list {
+  display: flex; flex-direction: column; gap: 0.75rem;
+}
+.predictive-liq__item {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem;
+}
+.predictive-liq__item-header {
+  display: flex; justify-content: space-between;
+  align-items: center; margin-bottom: 0.5rem;
+}
+.predictive-liq__symbol { font-weight: 700; font-size: 0.9rem; }
+.predictive-liq__prob { font-weight: 700; font-size: 1rem; }
+.predictive-liq__bar-wrap {
+  height: 4px; background: var(--bg-secondary);
+  border-radius: 2px; overflow: hidden; margin-bottom: 0.5rem;
+}
+.predictive-liq__bar {
+  height: 100%; border-radius: 2px; transition: width 0.3s;
+}
+.predictive-liq__factors { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.predictive-liq__factor {
+  font-size: 0.7rem; background: var(--bg-secondary);
+  padding: 0.2rem 0.5rem; border-radius: 3px;
+}
+
+/* ─── Protocol Aggregation ─── */
+.protocol-agg { max-width: 900px; }
+.protocol-agg__title { font-size: 1.25rem; margin-bottom: 1rem; }
+.protocol-agg__controls {
+  margin-bottom: 1.5rem;
+}
+.protocol-agg__label {
+  display: flex; align-items: center; gap: 0.75rem;
+  font-size: 0.85rem; color: var(--text-secondary);
+}
+.protocol-agg__select {
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  border-radius: 6px; padding: 0.5rem 0.75rem; color: var(--text-primary);
+}
+.protocol-agg__grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem; margin-bottom: 1.5rem;
+}
+.protocol-agg__card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1.25rem;
+}
+.protocol-agg__card-title {
+  font-size: 0.95rem; margin-bottom: 0.75rem;
+}
+.protocol-agg__card-name {
+  font-size: 0.75rem; color: var(--text-secondary); font-weight: 400;
+}
+.protocol-agg__card-empty {
+  color: var(--text-secondary); font-size: 0.85rem;
+}
+.protocol-agg__table {
+  width: 100%; border-collapse: collapse; font-size: 0.8rem;
+}
+.protocol-agg__table th {
+  text-align: left; padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--border); color: var(--text-secondary);
+  font-size: 0.7rem;
+}
+.protocol-agg__table td {
+  padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border);
+}
+.protocol-agg__summary {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1.25rem;
+}
+.protocol-agg__summary-score {
+  font-size: 1rem; font-weight: 700; color: var(--accent);
+  display: block; margin-bottom: 0.5rem;
+}
+.protocol-agg__summary-desc {
+  font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;
+}
+
+/* ─── Rebalancer Demo ─── */
+.rebalancer-demo { max-width: 900px; }
+.rebalancer-demo__title { font-size: 1.25rem; margin-bottom: 1rem; }
+.rebalancer-demo__controls {
+  display: flex; gap: 0.75rem; margin-bottom: 1.5rem;
+}
+.rebalancer-demo__btn {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 6px; padding: 0.5rem 1rem;
+  color: var(--text-secondary); cursor: pointer; font-size: 0.85rem;
+}
+.rebalancer-demo__btn--active {
+  background: var(--accent); color: #fff; border-color: var(--accent);
+}
+.rebalancer-demo__chart {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;
+}
+.rebalancer-demo__summary {
+  display: flex; gap: 1.5rem; margin-bottom: 1.5rem;
+  font-size: 0.85rem; color: var(--text-secondary);
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1rem;
+}
+.rebalancer-demo__actions {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 8px; padding: 1.25rem;
+}
+.rebalancer-demo__actions h3 {
+  font-size: 0.875rem; color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+}
+.rebalancer-demo__action-list {
+  list-style: none; padding: 0;
+  max-height: 200px; overflow-y: auto;
+}
+.rebalancer-demo__action-item {
+  display: flex; gap: 0.75rem; align-items: center;
+  padding: 0.4rem 0; border-bottom: 1px solid var(--border);
+  font-size: 0.8rem;
+}
+.rebalancer-demo__action-time {
+  color: var(--text-secondary); min-width: 40px;
+}
+.rebalancer-demo__action-desc { font-weight: 600; }
+.rebalancer-demo__action-reason {
+  color: var(--text-secondary); margin-left: auto;
+}

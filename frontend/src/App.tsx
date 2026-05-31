@@ -9,8 +9,12 @@ import { BacktestView } from "./modules/backtest_view/BacktestView";
 import { ContagionMap } from "./modules/contagion_map/ContagionMap";
 import { LiquidationShield } from "./modules/liquidation_shield/LiquidationShield";
 import { WhaleSignal } from "./modules/whale_signal/WhaleSignal";
+import { StressTest } from "./modules/stress_test/StressTest";
+import { PredictiveLiq } from "./modules/predictive_liq/PredictiveLiq";
+import { ProtocolAgg } from "./modules/protocol_agg/ProtocolAgg";
+import { RebalancerDemo } from "./modules/rebalancer_demo/RebalancerDemo";
 
-type Tab = "oracle" | "risk" | "alerts" | "contagion" | "liquidation" | "whale" | "vault" | "backtest";
+type Tab = "oracle" | "risk" | "alerts" | "contagion" | "liquidation" | "whale" | "vault" | "backtest" | "stress" | "predictive" | "protocol" | "rebalancer";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "oracle", label: "Oracle" },
@@ -18,6 +22,10 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "contagion", label: "传导图" },
   { key: "liquidation", label: "清算保护" },
   { key: "whale", label: "鲸鱼信号" },
+  { key: "stress", label: "压力测试" },
+  { key: "predictive", label: "清算预测" },
+  { key: "protocol", label: "多协议" },
+  { key: "rebalancer", label: "调仓演示" },
   { key: "alerts", label: "告警" },
   { key: "vault", label: "Vault" },
   { key: "backtest", label: "回测" },
@@ -57,6 +65,10 @@ export default function App() {
         {tab === "contagion" && <ContagionMap />}
         {tab === "liquidation" && <LiquidationShield />}
         {tab === "whale" && <WhaleSignal />}
+        {tab === "stress" && <StressTest />}
+        {tab === "predictive" && <PredictiveLiq />}
+        {tab === "protocol" && <ProtocolAgg />}
+        {tab === "rebalancer" && <RebalancerDemo />}
         {tab === "alerts" && <AlertFeed />}
         {tab === "vault" && <VaultUI />}
         {tab === "backtest" && <BacktestView />}

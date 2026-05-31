@@ -297,6 +297,147 @@ async def whale_signals() -> dict[str, Any]:
     return result
 
 
+@app.get("/api/stress-test")
+async def stress_test(asset: str = "BTC", shock_pct: float = -20) -> dict[str, Any]:
+    """压力测试模拟器：输入冲击资产+幅度，输出全组合预期损失。"""
+    from stress_test import simulate_stress
+
+    result = await simulate_stress(asset, shock_pct)
+    if "error" in result:
+        raise HTTPException(status_code=502, detail=result["error"])
+
+    # 适配前端期望的结构
+    summary = result.get("portfolio_summary", {})
+    asset_losses = [
+        {
+            "symbol": a["symbol"],
+            "expected_loss_pct": a["expected_loss_pct"],
+            "current_exposure": a.get("correlation_to_shock", 0),
+        }
+        for a in result.get("asset_impacts", [])
+    ]
+    return {
+        "shock_asset": result["shock_asset"],
+        "shock_pct": result["shock_pct"],
+        "total_portfolio_loss_pct": summary.get("total_portfolio_loss_pct", 0),
+        "cascade_risk_level": summary.get("cascade_risk_level", "low"),
+        "asset_losses": asset_losses,
+    }
+
+
+@app.get("/api/predictive-liquidation")
+async def predictive_liquidation() -> dict[str, Any]:
+    """预测性清算告警：未来 4h 各资产清算概率。"""
+    from predictive_liq import predict_liquidations
+
+    result = await predict_liquidations()
+    if "error" in result:
+        raise HTTPException(status_code=502, detail=result["error"])
+
+    # 适配前端期望的结构
+    cascade = result.get("global_cascade", {})
+    assets = [
+        {
+            "symbol": a["symbol"],
+            "liquidation_probability": a["liquidation_probability_4h"] / 100,
+            "factors": {
+                "oi_contribution": a["factors"]["oi_speed"] / 100,
+                "funding_contribution": a["factors"]["funding_direction"] / 100,
+                "correlation_contribution": a["factors"]["correlation_concentration"] / 100,
+                "volatility_contribution": a["factors"]["volatility"] / 100,
+            },
+        }
+        for a in result.get("asset_predictions", [])
+    ]
+    return {
+        "cascade_probability": cascade.get("cascade_probability", 0) / 100,
+        "cascade_risk_level": cascade.get("alert_level", "low"),
+        "assets": assets,
+    }
+
+
+@app.get("/api/rebalancer-demo")
+async def rebalancer_demo(scenario: str = "stress") -> dict[str, Any]:
+    """实时调仓演示：模拟 Oracle 信号变化时 Vault 如何调仓。"""
+    from rebalancer_demo import generate_rebalance_demo
+
+    result = await generate_rebalance_demo(scenario)
+    # 适配前端期望的结构
+    sc_data = result.get("scenarios", {}).get(scenario, {})
+    timeline = sc_data.get("timeline", [])
+    stats = sc_data.get("stats", {})
+
+    series = [
+        {
+            "timestamp": f"2024-01-01T{p['time_offset_min'] // 60:02d}:{p['time_offset_min'] % 60:02d}:00",
+            "sui_position_pct": p["sui_pct"],
+            "risk_score": p["risk_score"],
+            "is_rebalance": p["action"] != "hold",
+        }
+        for p in timeline
+    ]
+    actions = [
+        {
+            "timestamp": f"2024-01-01T{p['time_offset_min'] // 60:02d}:{p['time_offset_min'] % 60:02d}:00",
+            "action": p["action"],
+            "reason": p["trigger"] or "",
+            "from_pct": 0,
+            "to_pct": p["sui_pct"],
+        }
+        for p in timeline if p["action"] != "hold"
+    ]
+    return {
+        "scenario": scenario,
+        "series": series,
+        "actions": actions,
+        "summary": {
+            "total_rebalances": stats.get("rebalance_count", 0),
+            "max_risk_reached": stats.get("max_risk_score", 0),
+            "final_position_pct": timeline[-1]["sui_pct"] if timeline else 50,
+        },
+    }
+
+
+@app.get("/api/protocol-aggregation")
+async def protocol_aggregation(symbol: str = "SUI") -> dict[str, Any]:
+    """多协议联动：一个 Oracle 信号同时保护 Lending/Perp/Vault。"""
+    from protocol_aggregator import compute_protocol_params
+
+    # 获取当前风险评分
+    async with EvoQuantClient() as client:
+        try:
+            risk = await client.get_risk_score(symbol)
+            risk_score = risk.get("risk_score", 50)
+        except EvoQuantAPIError:
+            risk_score = 50
+
+    result = compute_protocol_params(risk_score, symbol)
+    # 适配前端期望的结构
+    categories = []
+    for proto in result.get("protocols", []):
+        wo = proto["without_oracle"]
+        wi = proto["with_oracle"]
+        effect = proto["protection_effect"]
+        categories.append({
+            "protocol_type": proto["protocol"].split("(")[0].strip().lower(),
+            "protocol_name": proto["protocol"],
+            "params": [{
+                "parameter": proto["parameter"],
+                "with_oracle": wi.get("description", ""),
+                "without_oracle": wo.get("description", ""),
+                "improvement": f"{effect['direction']} {effect['change_pct']}%",
+            }],
+        })
+    return {
+        "symbol": result["symbol"],
+        "categories": categories,
+        "protection_summary": {
+            "total_improvement_score": risk_score,
+            "description": result.get("summary", ""),
+        },
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="EvoOracle 前端 API 服务")
     parser.add_argument("--host", default=settings.server_host)
