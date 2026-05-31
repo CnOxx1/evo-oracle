@@ -21,6 +21,9 @@ EvoOracle 的后端服务，承担两个角色：
 | `api_client` | [api_client/](api_client/README.md) | EvoQuantV3 API 客户端封装 |
 | `risk_composer` | [risk_composer/](risk_composer/README.md) | 可解释风险评分（证据链加权拆解） |
 | `alert_engine` | [alert_engine/](alert_engine/README.md) | 异常检测引擎（6 类告警 + 三级严重度） |
+| `contagion_engine` | contagion_engine/ | 跨资产风险传导图（相关性矩阵 + 板块轮动 + 组合风险） |
+| `liquidation_shield` | liquidation_shield/ | 清算级联保护（OI + 资金费率 + VaR + 相关性） |
+| `whale_signal` | whale_signal/ | 鲸鱼风险信号（RS 突变 + 资金流向 + 资金费率） |
 | `signal_processor` | [signal_processor/](signal_processor/README.md) | 信号 → 链上整数格式转换 |
 | `sui_publisher` | [sui_publisher/](sui_publisher/README.md) | 提交 Move 合约调用 |
 | `scheduler` | [scheduler/](scheduler/README.md) | Bridge 定时主循环 |
@@ -67,3 +70,4 @@ python -m server.app --port 8100
 | 2026-05-30 | 初始化后端结构与各模块脚手架 |
 | 2026-05-30 | 新增 risk_composer（可解释评分）与 alert_engine（异常检测）两个模块，server 暴露对应接口 |
 | 2026-05-31 | 实现 `/api/vault/state`（基于风险评分动态模拟仓位）和 `/api/backtest/luna`（硬编码 LUNA 崩盘时间序列）；sui_publisher 集成 pysui（保留 dry-run 兜底） |
+| 2026-05-31 | 新增三大风险引擎：contagion_engine（跨资产传导图）、liquidation_shield（清算级联保护，已接入真实 OI 数据）、whale_signal（鲸鱼风险信号）；LUNA 回测升级为参数化交互式 demo |
