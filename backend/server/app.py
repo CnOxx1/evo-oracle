@@ -236,7 +236,7 @@ async def contagion_map() -> dict[str, Any]:
 
 @app.get("/api/liquidation-shield")
 async def liquidation_shield() -> dict[str, Any]:
-    """清算级联保护：资金费率 + VaR + 相关性 → 清算风险评估。"""
+    """清算级联保护：资金费率 + OI + VaR + 相关性 → 清算风险评估。"""
     cache_key = "liquidation_shield"
     if (cached := _cache_get(cache_key)) is not None:
         return cached
@@ -251,7 +251,25 @@ async def liquidation_shield() -> dict[str, Any]:
         except EvoQuantAPIError as e:
             raise HTTPException(status_code=502, detail=f"EvoQuantV3 不可用: {e}")
 
-    result = compute_liquidation_risk(funding, portfolio, correlation)
+        # OI 数据（已接入）
+        oi_data: dict[str, Any] = {}
+        for symbol in funding.get("funding_rates", {}).keys():
+            try:
+                oi = await client.get_open_interest(symbol.replace("/USDT", ""))
+                oi_data[symbol] = oi
+            except EvoQuantAPIError:
+                pass
+
+        # 清算激增（graceful fallback）
+        liq_surges = None
+        try:
+            liq_surges = await client.get_liquidation_surges()
+        except EvoQuantAPIError:
+            pass
+
+    result = compute_liquidation_risk(
+        funding, portfolio, correlation, oi_data, liq_surges
+    )
     _cache_set(cache_key, result)
     return result
 

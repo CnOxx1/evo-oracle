@@ -1,7 +1,7 @@
 """清算级联保护引擎。
 
-基于资金费率异常 + 组合风险数据模拟清算风险，
-待 EvoQuantV3 清算/OI 数据就绪后切换为真实数据源。
+基于 OI（持仓量）变化 + 资金费率异常 + 组合风险数据计算清算风险。
+已接入真实 OI 数据，清算激增数据 graceful fallback。
 """
 
 from __future__ import annotations
@@ -9,28 +9,57 @@ from __future__ import annotations
 from typing import Any
 
 
+def _oi_risk_factor(oi_data: dict[str, Any]) -> float:
+    """从 OI 数据计算杠杆堆积风险因子 (0~1)。
+
+    OI 24h 变化率越大 -> 新杠杆仓位越多 -> 清算风险越高。
+    """
+    by_exchange = oi_data.get("by_exchange", {})
+    if not by_exchange:
+        return 0.0
+
+    max_change_pct = 0.0
+    for ex_data in by_exchange.values():
+        oi_val = ex_data.get("open_interest_usd") or ex_data.get("open_interest_contracts", 0)
+        change_24h = ex_data.get("open_interest_change_24h", 0)
+        if oi_val and oi_val > 0:
+            change_pct = abs(change_24h) / oi_val
+            max_change_pct = max(max_change_pct, change_pct)
+
+    # 24h OI 变化超过 10% 视为极端
+    return min(max_change_pct / 0.10, 1.0)
+
+
 def compute_liquidation_risk(
     funding_all: dict[str, Any],
     portfolio_risk: dict[str, Any],
     correlation: dict[str, Any],
+    open_interest: dict[str, Any] | None = None,
+    liquidation_surges: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """计算清算级联风险。
 
-    当前基于：
-    - 资金费率极端值 → 仓位拥挤 → 清算概率升高
-    - 组合 VaR → 极端波动下损失预估
-    - 高相关性集群 → 级联效应放大器
-
-    待接入（EvoQuantV3 开发中）：
-    - /exchange/liquidations → 真实清算量
-    - /monitor/liquidation-surges → 清算激增检测
-    - /exchange/open-interest → OI 突变
+    数据源：
+    - /exchange/funding -> 资金费率极端值 -> 仓位拥挤信号
+    - /exchange/open-interest -> OI 变化 -> 杠杆堆积 [已接入]
+    - /risk/portfolio/latest -> VaR + 波动率
+    - /cross-asset/correlation -> 级联效应放大器
+    - /monitor/liquidation-surges -> 清算激增 [graceful]
     """
     funding_rates = funding_all.get("funding_rates", {})
     var_95 = portfolio_risk.get("daily_var_95", 0)
     var_99 = portfolio_risk.get("daily_var_99", 0)
     vol = portfolio_risk.get("annualized_volatility", 0)
     avg_corr = correlation.get("avg_correlation", 0)
+
+    # OI 数据查找表
+    oi_lookup: dict[str, dict] = {}
+    if open_interest:
+        for symbol, oi_data in open_interest.items():
+            oi_lookup[symbol] = oi_data
+
+    # 真实清算激增
+    has_surge_data = bool(liquidation_surges and liquidation_surges.get("count", 0) > 0)
 
     # 逐资产分析清算风险
     assets = []
@@ -39,13 +68,31 @@ def compute_liquidation_risk(
         annualized = data.get("annualized_rate", 0)
         is_elevated = data.get("is_elevated", False)
 
-        # 清算风险因子：资金费率越极端 → 单边仓位越拥挤 → 清算概率越高
-        funding_extremity = min(abs(annualized) / 0.5, 1.0)  # 年化 50% 为极端
-        # 考虑相关性放大
+        # 因子1: 资金费率极端值 (0~1)
+        funding_extremity = min(abs(annualized) / 0.5, 1.0)
+
+        # 因子2: OI 杠杆堆积 (0~1)
+        oi_factor = 0.0
+        oi_value_usd = None
+        oi_change_24h_pct = None
+        if symbol in oi_lookup:
+            oi_factor = _oi_risk_factor(oi_lookup[symbol])
+            oi_value_usd = oi_lookup[symbol].get("total_oi_value_usd")
+            # 计算 24h 变化百分比
+            by_ex = oi_lookup[symbol].get("by_exchange", {})
+            for ex_data in by_ex.values():
+                oi_val = ex_data.get("open_interest_usd") or ex_data.get("open_interest_contracts", 0)
+                chg = ex_data.get("open_interest_change_24h", 0)
+                if oi_val and oi_val > 0:
+                    oi_change_24h_pct = round(chg / oi_val * 100, 2)
+                    break
+
+        # 因子3: 相关性放大器
         cascade_multiplier = 1 + max(0, avg_corr - 0.3) * 2
 
-        liq_risk_score = round(funding_extremity * cascade_multiplier * 100, 1)
-        liq_risk_score = min(100, liq_risk_score)
+        # 综合清算风险 = (funding * 0.4 + oi * 0.6) * cascade
+        raw_score = (funding_extremity * 0.4 + oi_factor * 0.6) * cascade_multiplier * 100
+        liq_risk_score = round(min(100, raw_score), 1)
 
         risk_level = (
             "critical" if liq_risk_score >= 70
@@ -54,24 +101,27 @@ def compute_liquidation_risk(
             else "low"
         )
 
-        assets.append({
+        asset_entry = {
             "symbol": symbol.replace("/USDT", ""),
             "funding_rate": round(avg_rate, 6),
             "annualized_rate": round(annualized, 4),
             "is_elevated": is_elevated,
+            "oi_risk_factor": round(oi_factor, 3),
+            "oi_value_usd": oi_value_usd,
+            "oi_change_24h_pct": oi_change_24h_pct,
             "liquidation_risk_score": liq_risk_score,
             "risk_level": risk_level,
             "cascade_multiplier": round(cascade_multiplier, 2),
-        })
+        }
+        assets.append(asset_entry)
 
-    # 排序：风险最高的在前
+    # 排序
     assets.sort(key=lambda x: x["liquidation_risk_score"], reverse=True)
 
     # 全局清算级联风险
     high_risk_count = sum(1 for a in assets if a["risk_level"] in ("high", "critical"))
     avg_liq_score = sum(a["liquidation_risk_score"] for a in assets) / max(len(assets), 1)
 
-    # 级联风险 = 高风险资产数 × 相关性 × 波动率
     cascade_score = min(100, avg_liq_score * (1 + avg_corr) * (1 + vol))
 
     if cascade_score >= 70:
@@ -83,6 +133,13 @@ def compute_liquidation_risk(
     else:
         shield_status = "safe"
         shield_action = "正常运行：清算风险可控"
+
+    # 数据源状态
+    data_sources = ["funding_rate", "portfolio_var", "correlation_matrix"]
+    if oi_lookup:
+        data_sources.append("open_interest")
+    if has_surge_data:
+        data_sources.append("liquidation_surges")
 
     return {
         "shield_status": shield_status,
@@ -99,11 +156,8 @@ def compute_liquidation_risk(
             "annualized_volatility": round(vol, 4),
             "avg_correlation": round(avg_corr, 4),
         },
-        "assets": assets[:10],  # Top 10 高风险资产
-        "data_source": "funding_rate_proxy",
-        "pending_upgrade": [
-            "/exchange/liquidations — 真实清算量",
-            "/monitor/liquidation-surges — 清算激增检测",
-            "/exchange/open-interest — OI 突变",
-        ],
+        "assets": assets[:10],
+        "data_sources_active": data_sources,
+        "has_real_oi": bool(oi_lookup),
+        "has_real_liquidations": has_surge_data,
     }
