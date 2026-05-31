@@ -12,6 +12,15 @@ interface OverviewData {
   data_source_status: string;
 }
 
+const FEATURES = [
+  "压力测试模拟器",
+  "4h 清算概率预测",
+  "跨资产传导图",
+  "一信号三协议联动",
+  "实时调仓动画",
+  "LUNA 崩盘回测",
+];
+
 export function Overview() {
   const { data, isLoading, error } = useQuery<OverviewData>({
     queryKey: ["overview"],
@@ -49,6 +58,21 @@ export function Overview() {
   return (
     <section className="overview">
       <h2 className="overview__title">EvoOracle 全局风险概览</h2>
+
+      <div className="overview__intro">
+        <p className="overview__intro-headline">
+          <strong>EvoOracle</strong> 是 Sui 上的风险预言机 —— 价格预言机告诉你"现在多少钱"，
+          EvoOracle 告诉你<strong>"现在有多危险"</strong>。一个信号，同时保护借贷、永续、金库三类协议。
+        </p>
+        <div className="overview__features">
+          {FEATURES.map((f) => (
+            <div key={f} className="overview__feature">
+              <span className="overview__feature-dot" />
+              <span>{f}</span>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <div className="overview__hero">
         <div className="overview__score-ring" style={{ borderColor: riskColor(data.system_risk_level) }}>

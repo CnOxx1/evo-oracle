@@ -63,18 +63,31 @@ button:hover {
   font-size: 1.25rem;
   color: var(--accent);
   margin-right: auto;
+  white-space: nowrap;
 }
 
 .app-tabs {
   display: flex;
   gap: 0.25rem;
+  overflow-x: auto;
+  max-width: 100%;
+  padding-bottom: 0.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
 }
+
+.app-tabs::-webkit-scrollbar { height: 3px; }
+.app-tabs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
 .tab-btn {
   background: transparent;
   color: var(--text-secondary);
   padding: 0.4rem 0.75rem;
+  white-space: nowrap;
+  transition: background 0.2s, color 0.2s;
 }
+
+.tab-btn:hover { color: var(--text-primary); }
 
 .tab-btn--active {
   background: var(--bg-card);
@@ -88,12 +101,35 @@ button:hover {
   color: var(--text-secondary);
 }
 
+.loading {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 .error { color: var(--risk-high); }
 
 .subtitle {
   color: var(--text-secondary);
   margin-bottom: 1rem;
   font-size: 0.875rem;
+}
+
+.app-main > section {
+  animation: fadeIn 0.3s ease-out;
 }
 
 /* ─── Asset Grid ─── */
@@ -1306,3 +1342,63 @@ button:hover {
   color: var(--text-secondary); margin-bottom: 0.5rem;
 }
 .overview__card-value { font-size: 1.5rem; font-weight: 700; }
+
+/* ─── Overview Intro ─── */
+.overview__intro {
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 1.5rem; margin-bottom: 1.5rem;
+}
+.overview__intro-headline {
+  font-size: 1rem; color: var(--text-primary);
+  margin-bottom: 0.75rem; line-height: 1.5;
+}
+.overview__intro-headline strong { color: var(--accent); }
+.overview__features {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+.overview__feature {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.8rem; color: var(--text-secondary);
+}
+.overview__feature-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 1024px) {
+  #root { padding: 0.75rem; }
+  .app-header { gap: 0.5rem; }
+  .app-title { font-size: 1.1rem; }
+  .tab-btn { padding: 0.35rem 0.6rem; font-size: 0.8rem; }
+  .asset-grid { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+  .overview__hero { padding: 1.5rem; gap: 1.5rem; }
+  .protocol-agg__grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  #root { padding: 0.5rem; }
+  .app-header { flex-direction: column; align-items: stretch; }
+  .app-title { margin-right: 0; text-align: center; }
+  .app-tabs { justify-content: flex-start; }
+  .overview__hero { flex-direction: column; text-align: center; }
+  .overview__cards { grid-template-columns: repeat(2, 1fr); }
+  .stress-test__controls { flex-direction: column; align-items: stretch; }
+  .stress-test__slider { width: 100%; }
+  .stress-test__summary { flex-direction: column; }
+  .stress-test__presets { justify-content: center; }
+  .rebalancer-demo__summary { flex-direction: column; gap: 0.5rem; }
+  .result-summary { flex-direction: column; }
+  .asset-grid { grid-template-columns: 1fr; }
+  .overview__features { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 480px) {
+  .tab-btn { padding: 0.3rem 0.5rem; font-size: 0.75rem; }
+  .overview__cards { grid-template-columns: 1fr 1fr; }
+  .overview__score-ring { width: 80px; height: 80px; }
+  .overview__score-value { font-size: 1.5rem; }
+  .overview__features { grid-template-columns: 1fr; }
+}
