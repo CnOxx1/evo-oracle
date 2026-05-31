@@ -61,6 +61,65 @@ async def health() -> dict[str, Any]:
     }
 
 
+@app.get("/api/overview")
+async def overview() -> dict[str, Any]:
+    """全局风险概览：一键看系统状态，Demo 首页用。"""
+    async with EvoQuantClient() as client:
+        try:
+            portfolio = await client.get_portfolio_risk()
+            macro = await client.get_macro_regime()
+            funding = await client.get_funding_all()
+        except EvoQuantAPIError:
+            return {
+                "system_risk_score": 50,
+                "system_risk_level": "medium",
+                "macro_stance": "neutral",
+                "portfolio_var_95": 0,
+                "high_risk_asset_count": 0,
+                "total_tracked_assets": len(settings.tracked_symbols),
+                "active_alerts": 0,
+                "data_source_status": "offline",
+            }
+
+    # 系统风险评分：基于组合波动率 + VaR
+    ann_vol = portfolio.get("annualized_volatility", 0.5)
+    var_95 = abs(portfolio.get("var_95", 0.03))
+    system_score = int(min(ann_vol * 60 + var_95 * 800, 100))
+
+    # 高风险资产计数（资金费率极端）
+    rates = funding.get("funding_rates", {})
+    high_risk_count = sum(
+        1 for v in rates.values()
+        if abs(v.get("rate", 0)) * 3 * 365 > 0.05
+    )
+
+    # 告警数
+    try:
+        alert_data = await alerts_all()
+        alert_count = alert_data.get("alert_count", 0)
+    except Exception:
+        alert_count = 0
+
+    level = (
+        "critical" if system_score >= 75 else
+        "high" if system_score >= 55 else
+        "medium" if system_score >= 35 else
+        "low"
+    )
+
+    return {
+        "system_risk_score": system_score,
+        "system_risk_level": level,
+        "macro_stance": macro.get("overall_stance", "neutral"),
+        "portfolio_var_95": round(var_95 * 100, 2),
+        "annualized_volatility": round(ann_vol * 100, 1),
+        "high_risk_asset_count": high_risk_count,
+        "total_tracked_assets": len(rates),
+        "active_alerts": alert_count,
+        "data_source_status": "online",
+    }
+
+
 @app.get("/api/oracle/{symbol}")
 async def oracle_symbol(symbol: str) -> dict[str, Any]:
     """单资产链上信号视图：原始信号 + 转换后的链上 payload。"""

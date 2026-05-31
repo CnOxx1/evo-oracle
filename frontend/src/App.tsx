@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { AuthProvider } from "./modules/auth/AuthProvider";
 import { LoginButton } from "./modules/auth/LoginButton";
+import { Overview } from "./modules/overview/Overview";
 import { OracleDashboard } from "./modules/oracle_dashboard/OracleDashboard";
 import { RiskBreakdown } from "./modules/risk_breakdown/RiskBreakdown";
 import { AlertFeed } from "./modules/alert_feed/AlertFeed";
@@ -14,9 +15,10 @@ import { PredictiveLiq } from "./modules/predictive_liq/PredictiveLiq";
 import { ProtocolAgg } from "./modules/protocol_agg/ProtocolAgg";
 import { RebalancerDemo } from "./modules/rebalancer_demo/RebalancerDemo";
 
-type Tab = "oracle" | "risk" | "alerts" | "contagion" | "liquidation" | "whale" | "vault" | "backtest" | "stress" | "predictive" | "protocol" | "rebalancer";
+type Tab = "overview" | "oracle" | "risk" | "alerts" | "contagion" | "liquidation" | "whale" | "vault" | "backtest" | "stress" | "predictive" | "protocol" | "rebalancer";
 
 const TABS: { key: Tab; label: string }[] = [
+  { key: "overview", label: "概览" },
   { key: "oracle", label: "Oracle" },
   { key: "risk", label: "风险分解" },
   { key: "contagion", label: "传导图" },
@@ -32,7 +34,7 @@ const TABS: { key: Tab; label: string }[] = [
 ];
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>("oracle");
+  const [tab, setTab] = useState<Tab>("overview");
   const [selectedSymbol, setSelectedSymbol] = useState("SUI");
 
   useEffect(() => {
@@ -60,6 +62,7 @@ export default function App() {
       </header>
 
       <main className="app-main">
+        {tab === "overview" && <Overview />}
         {tab === "oracle" && <OracleDashboard onSelectSymbol={(s) => { setSelectedSymbol(s); setTab("risk"); }} />}
         {tab === "risk" && <RiskBreakdown symbol={selectedSymbol} />}
         {tab === "contagion" && <ContagionMap />}
