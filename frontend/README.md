@@ -61,8 +61,16 @@ npm run dev          # 默认 http://localhost:5173
 
 ## 当前状态
 
-> ⚠️ 脚手架阶段：定义了 `package.json`、模块文件夹与各模块 md。
-> 具体 React 组件待初始化前端工程后逐模块开发。
+> ✅ Demo-ready：所有模块组件已实现，前端可正常构建和运行。
+
+## 启动
+
+```bash
+npm install
+npm run dev          # 默认 http://localhost:5173
+```
+
+需要先启动 EvoOracle 后端 API（`:8100`）。Vite dev server 已配置 `/api` 代理到后端。
 
 ## 开发日志
 
@@ -71,3 +79,4 @@ npm run dev          # 默认 http://localhost:5173
 | 2026-05-30 | 初始化前端结构，定义三大模块文件夹与 md |
 | 2026-05-30 | 新增 risk_breakdown（风险拆解）与 alert_feed（告警流）模块 |
 | 2026-05-30 | 新增 auth（zkLogin）模块与 lib/zkLogin.ts 登录流程工具 |
+| 2026-05-31 | 完成全部前端组件实现：OracleDashboard、RiskBreakdown、AlertFeed、VaultUI、BacktestView、Auth；新增 API client、suiClient、format 工具；Vite 构建基础设施（vite.config.ts、tsconfig.json、index.html、main.tsx、index.css 暗色主题）；App Shell Tab 导航 |

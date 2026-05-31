@@ -118,3 +118,4 @@ cd frontend && npm install && npm run dev
 | 2026-05-30 | 新增参赛提交文档 `SUBMISSION.md`（评委向） | 文档 |
 | 2026-05-30 | 新增亮点功能：可解释风险评分、异常告警（后端真实实现）、链上 Alert event、借贷动态 LTV 适配器、前端风险拆解/告警流模块 | backend / contracts / frontend |
 | 2026-05-30 | 适配器升级为多协议：新增 perp_adapter（动态最大杠杆）；新增 zkLogin 登录（auth 模块 + lib/zkLogin.ts），Demo 免钱包 | contracts / frontend |
+| 2026-05-31 | **Demo-ready 完成**：前端全部 6 模块组件实现（OracleDashboard、RiskBreakdown、AlertFeed、VaultUI、BacktestView、Auth）；后端补全 vault/state 和 backtest/luna 端点；sui_publisher 集成 pysui；Vite 构建基础设施 + App Shell | frontend / backend |

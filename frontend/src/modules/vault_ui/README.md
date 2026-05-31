@@ -37,3 +37,4 @@
 | 日期 | 改动 |
 | --- | --- |
 | 2026-05-30 | 定义模块职责、用户操作与组件清单（待实现） |
+| 2026-05-31 | ✅ 实现 VaultUI.tsx、VaultCard.tsx、PnLCompareChart.tsx（Recharts） |

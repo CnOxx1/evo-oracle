@@ -33,3 +33,4 @@
 | 日期 | 改动 |
 | --- | --- |
 | 2026-05-30 | 定义模块职责、数据来源与组件清单（待实现） |
+| 2026-05-31 | ✅ 实现 BacktestView.tsx、LunaTimelineChart.tsx（Recharts 多轨叠加）、ResultSummary.tsx |

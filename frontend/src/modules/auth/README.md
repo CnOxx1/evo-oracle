@@ -55,11 +55,12 @@ zkLogin：  评委 → 点 "Google 登录" → 10 秒后已有 Sui 地址 → �
 
 ## 当前状态
 
-> ⚠️ 脚手架：流程封装在 `lib/zkLogin.ts`（真实可用的工具函数）。
-> React 组件待前端工程初始化后接入。需要先申请 Google OAuth Client ID。
+> ✅ 已实现：AuthProvider.tsx（Context 状态管理）+ LoginButton.tsx（登录/登出 UI）。
+> 流程封装在 `lib/zkLogin.ts`（真实可用的工具函数）。需要申请 Google OAuth Client ID。
 
 ## 开发日志
 
 | 日期 | 改动 |
 | --- | --- |
 | 2026-05-30 | 定义 zkLogin 模块，封装登录流程与配置项 |
+| 2026-05-31 | ✅ 实现 AuthProvider.tsx（Context + sessionStorage 持久化）、LoginButton.tsx |

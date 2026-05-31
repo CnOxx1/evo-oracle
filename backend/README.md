@@ -66,3 +66,4 @@ python -m server.app --port 8100
 | --- | --- |
 | 2026-05-30 | 初始化后端结构与各模块脚手架 |
 | 2026-05-30 | 新增 risk_composer（可解释评分）与 alert_engine（异常检测）两个模块，server 暴露对应接口 |
+| 2026-05-31 | 实现 `/api/vault/state`（基于风险评分动态模拟仓位）和 `/api/backtest/luna`（硬编码 LUNA 崩盘时间序列）；sui_publisher 集成 pysui（保留 dry-run 兜底） |

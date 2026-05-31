@@ -34,3 +34,4 @@
 | 日期 | 改动 |
 | --- | --- |
 | 2026-05-30 | 定义模块职责、数据来源与组件清单（待实现） |
+| 2026-05-31 | ✅ 实现 OracleDashboard.tsx、AssetCard.tsx、RiskBar.tsx；接入 React Query 轮询 |

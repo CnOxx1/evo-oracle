@@ -30,3 +30,4 @@
 | 日期 | 改动 |
 | --- | --- |
 | 2026-05-30 | 定义模块职责与数据来源，对接后端 risk-breakdown 接口 |
+| 2026-05-31 | ✅ 实现 RiskBreakdown.tsx、ContributionBar.tsx、DriverTags.tsx |
