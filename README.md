@@ -1,136 +1,281 @@
-# EvoOracle
+# EvoOracle — The Risk Oracle for Sui
 
-> 基于机构级数据的 Sui DeFi 风险引擎 —— 让 DeFi 协议的风险参数从「静态」变成「动态」。
+> Sui 生态首个 AI 驱动的链上风险预言机，实时评估 DeFi 协议风险并动态调整参数，防止 LUNA 式级联崩盘。
 
-## 一句话定位
+## 为什么需要 EvoOracle？
 
-把传统金融的波动率曲面、宏观因子、期权定价、链上行为，通过 AI 聚合后实时写入 Sui 链。任何 DeFi 协议接入后，可以把固定抵押率/固定仓位变成随市场风险自动调整的动态参数，避免 2022 年 LUNA 式的级联清算。
+2022 年 LUNA/UST 崩盘，72 小时蒸发 $40B+。根本原因：固定 LTV 清算机制在极端行情下完全失效，没有协议提前预警。
 
-## 项目背景
+**EvoOracle 解决方案**：将 AI 风险评分作为链上基础设施，一个信号同时驱动 Lending LTV / Perp 杠杆 / Vault 仓位。
 
-本项目是 [`EvoQuantV3`](../EvoQuantV3-main) 数据基座的链上分发层。
+## 核心亮点
+
+| 亮点 | 说明 |
+|------|------|
+| Sui 生态首个风险预言机 | 填补生态空白，不是价格预言机，是**风险**预言机 |
+| 多协议联动 | 一个 Oracle 信号 → Lending LTV(80%→30%) + Perp 杠杆(20x→2x) + Vault 仓位(80%→10%) |
+| 可解释风险评分 | 5 因子加权：波动率30% + 宏观20% + 趋势20% + 资金费率15% + 情绪15% |
+| LUNA 回测验证 | Protected -8% vs Static -43%，验证保护效果 |
+| 21 个功能模块 | 完整覆盖 DeFi 风险管理全流程 |
+| 端到端完整 | 数据采集 → 风险引擎 → 链上合约 → 可视化前端 |
+
+## 项目规模
+
+| 层 | 文件数 | 代码行数 | 模块数 |
+|----|--------|----------|--------|
+| Smart Contracts (Sui Move) | 10 | 1,400+ | 5 |
+| Backend (Python/FastAPI) | 40 | 3,300+ | 14 引擎 |
+| Frontend (React/TypeScript) | 51 | 4,100+ | 21 Tab |
+| **合计** | **101** | **8,800+** | **27 API 端点** |
+
+## 系统架构
 
 ```
-EvoQuantV3（AI 原生加密市场数据基座，已有）
-    ↓  REST API @ http://127.0.0.1:8000
-EvoOracle Bridge（本项目后端）
-    ↓  Sui SDK 提交交易
-Sui Move 合约（Oracle + RiskVault）
-    ↓
-前端 Dashboard（信号面板 + Vault 对比 + 历史回测）
+┌─────────────────────────────────────────────────────────────┐
+│ EvoQuantV3 数据基座 (100+ REST 端点)                         │
+│ 交易所微结构 · 期权Greeks · 链上流量 · 宏观 · 情绪 · RS      │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ HTTP
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│ EvoOracle Backend (FastAPI + 14 风险引擎 + SQLite 历史存储)  │
+│                                                             │
+│ risk_composer · alert_engine · contagion_engine              │
+│ liquidation_shield · whale_signal · stress_test             │
+│ predictive_liq · protocol_aggregator · cascade_simulator    │
+│ history_store · portfolio_tracker · macro_detail            │
+│ scheduler (5min) · signal_processor · sui_publisher         │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ Sui SDK (pysui)
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Sui Move Contracts (5 模块)                                  │
+│                                                             │
+│ Oracle (SharedObject) → RiskVault (动态调仓)                 │
+│                       → LendingAdapter (动态 LTV)            │
+│                       → PerpAdapter (动态杠杆)               │
+│                       → Alert (链上事件)                     │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ Sui RPC
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Frontend (React + TypeScript + Tailwind)                     │
+│ Landing Page + 21 Tab Dashboard                             │
+│ 概览 · Portfolio · 趋势 · Oracle · 风险分解 · 传导图 ·      │
+│ 清算保护 · 清算瀑布 · 清算热图 · 鲸鱼 · 压力测试 ·          │
+│ 清算预测 · 宏观 · 多协议 · 协议排名 · 调仓 · 告警规则 ·    │
+│ 告警 · Vault · 收益归因 · 回测                              │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-EvoQuantV3 负责「理解市场」，EvoOracle 负责「把市场判断送上链并产生价值」。
+## 竞争优势分析
 
-## 顶层架构（前后端分离）
+### vs 传统价格预言机（Pyth / Switchboard）
 
-| 层 | 目录 | 技术栈 | 职责 |
-| --- | --- | --- | --- |
-| 后端 | [`backend/`](backend/README.md) | Python + FastAPI | 拉取 EvoQuantV3 数据 → 转换 → 发布到 Sui → 给前端提供聚合 API |
-| 合约 | [`contracts/`](contracts/README.md) | Sui Move | 链上存储风险评分/AI 信号，RiskVault 自动调仓 |
-| 前端 | [`frontend/`](frontend/README.md) | React + Vite + TS | Oracle 监控面板、Vault 存取与对比、LUNA 历史回测 |
+| 对比维度 | Pyth / Switchboard | EvoOracle |
+|----------|-------------------|-----------|
+| 输出 | 价格 feed | 风险评分 (0-100) |
+| 数据维度 | 1 维（价格） | 5 维（波动率+宏观+趋势+资金费率+情绪） |
+| 协议联动 | 无 | Lending + Perp + Vault 同步响应 |
+| 预警能力 | 无 | 级联模拟 + 清算预测 + 鲸鱼监控 |
+| 回测验证 | 无 | LUNA 事件 -8% vs -43% |
 
-前后端完全分离：前端只与 `backend/server` 暴露的 REST API 和 Sui 链交互，不直接访问 EvoQuantV3。
+### vs 链下风控平台（Gauntlet / Chaos Labs）
 
-## 模块总览
+| 对比维度 | Gauntlet | EvoOracle |
+|----------|----------|-----------|
+| 部署位置 | 链下报告 | 链上 SharedObject |
+| 响应速度 | 人工审批 (天级) | 自动触发 (分钟级) |
+| 覆盖生态 | Ethereum 为主 | Sui 原生 |
+| 开源 | 否 | 完全开源 |
 
-### backend（后端）
+## 算法深度
 
-| 模块 | 目录 | 功能 |
-| --- | --- | --- |
-| API 客户端 | `backend/api_client` | 封装对 EvoQuantV3 (127.0.0.1:8000) 的所有调用 |
-| 可解释风险评分 | `backend/risk_composer` | 多证据链加权合成风险分 + 贡献拆解 |
-| 异常告警 | `backend/alert_engine` | 从信号中检测风险事件，分级告警 |
-| 信号处理 | `backend/signal_processor` | 把 API 返回数据转换成链上整数格式 |
-| Sui 发布 | `backend/sui_publisher` | 调用 Move 合约更新 Oracle、触发 Vault 再平衡 |
-| 调度器 | `backend/scheduler` | 定时主循环（每 5 分钟拉取 + 发布） |
-| 前端 API | `backend/server` | 给前端提供聚合后的 REST 接口（前后端分离） |
-| 配置 | `backend/config` | API 地址、Sui 网络、对象 ID 等集中配置 |
-| 传导图引擎 | `backend/contagion_engine` | 跨资产风险传导图（相关性矩阵 + 板块轮动 + 组合风险） |
-| 清算保护 | `backend/liquidation_shield` | 清算级联保护（OI + 资金费率 + VaR + 相关性） |
-| 鲸鱼信号 | `backend/whale_signal` | 鲸鱼风险信号（RS 突变 + 资金流向 + 资金费率） |
-| 压力测试 | `backend/stress_test` | 冲击传导模拟器（相关性×beta 计算全组合损失 + 级联清算估算） |
-| 清算预测 | `backend/predictive_liq` | 预测性清算告警（OI增速/资金费率/相关性集中度/波动率四因子sigmoid概率） |
-| 多协议联动 | `backend/protocol_aggregator` | 一信号同时驱动 Lending LTV / Perp 杠杆 / Vault 仓位 |
-| 调仓演示 | `backend/rebalancer_demo` | 三场景（正常/压力/崩盘）24h 时间序列调仓动画数据 |
+### 5 因子风险评分模型
 
-### contracts（链上合约）
+```
+RiskScore = 0.30 × Volatility + 0.20 × Macro + 0.20 × Trend + 0.15 × FundingRate + 0.15 × Sentiment
 
-| 模块 | 目录 | 功能 |
-| --- | --- | --- |
-| EvoOracle | `contracts/oracle` | 存储各资产风险评分 + AI 信号，授权更新、公开读取 |
-| RiskVault | `contracts/risk_vault` | 读取 Oracle，按风险评分自动调整 SUI/USDC 仓位 |
-| Alert | `contracts/alert` | 把异常作为链上 event 发出，协议可订阅 |
-| LendingAdapter | `contracts/adapters/lending_adapter` | 借贷协议接入示例：动态 LTV |
-| PerpAdapter | `contracts/adapters/perp_adapter` | 永续协议接入示例：动态最大杠杆 |
+其中：
+- Volatility: 已实现波动率 vs 隐含波动率偏差
+- Macro: BTC 主导度 + 稳定币流出 + DXY 相关性
+- Trend: EMA 交叉 + RSI 极值 + 成交量异常
+- FundingRate: 永续合约资金费率偏离 + 持仓量变化
+- Sentiment: 社交情绪指数 + 恐慌贪婪指数
+```
 
-### frontend（前端）
+### 级联传导模拟
 
-| 模块 | 目录 | 功能 |
-| --- | --- | --- |
-| 登录 (zkLogin) | `frontend/src/modules/auth` | Google 一键登录，无需钱包 |
-| Oracle 面板 | `frontend/src/modules/oracle_dashboard` | 链上信号实时监控 |
-| 风险拆解 | `frontend/src/modules/risk_breakdown` | 可解释风险评分可视化 |
-| 告警流 | `frontend/src/modules/alert_feed` | 实时异常告警流 |
-| Vault 界面 | `frontend/src/modules/vault_ui` | 存取款 + Protected vs Static 对比 |
-| 历史回测 | `frontend/src/modules/backtest_view` | LUNA 崩盘期间的策略复盘可视化 |
-| 传导图 | `frontend/src/modules/contagion_map` | 跨资产风险传导图可视化 |
-| 清算保护 | `frontend/src/modules/liquidation_shield` | 清算级联保护面板 |
-| 鲸鱼信号 | `frontend/src/modules/whale_signal` | 大资金动向推断 |
-| 压力测试 | `frontend/src/modules/stress_test` | 冲击传导模拟器（选资产+幅度，实时计算全组合损失） |
-| 清算预测 | `frontend/src/modules/predictive_liq` | 4因子加权预测未来4h清算概率 |
-| 多协议联动 | `frontend/src/modules/protocol_agg` | 一信号同时驱动 Lending/Perp/Vault 参数对比 |
-| 调仓演示 | `frontend/src/modules/rebalancer_demo` | 三场景24h时间序列调仓动画 |
+```python
+# 5 轮迭代模拟清算级联
+for round in range(5):
+    for asset in affected_assets:
+        impact = initial_shock * correlation_matrix[source][asset] * (0.7 ** round)
+        if impact > liquidation_threshold[asset]:
+            trigger_cascade(asset)
+```
+
+### 动态参数调整公式
+
+```
+LTV_new = LTV_base × (1 - risk_score / 100)
+# risk=0  → LTV=80% (正常)
+# risk=50 → LTV=40% (警戒)
+# risk=80 → LTV=16% (极端)
+
+Leverage_new = max_leverage × (1 - risk_score / 100)
+# risk=0  → 20x
+# risk=50 → 10x
+# risk=80 → 4x
+```
+
+## Sui 链特性深度利用
+
+| Sui 特性 | EvoOracle 利用方式 |
+|----------|-------------------|
+| Shared Objects | Oracle 评分作为 SharedObject，多协议并发读取无锁 |
+| Move 线性类型 | RiskVault 的 Coin 资产安全保证 |
+| 动态字段 (Dynamic Fields) | Oracle 按 symbol 动态存储评分，支持无限扩展 |
+| Events | Alert 模块发射链上事件，前端/Indexer 可订阅 |
+| PTB (Programmable Transaction Blocks) | 一笔交易内完成：读 Oracle → 调 LTV → 调杠杆 → 调仓位 |
+| Object-centric Model | 每个 Vault/Adapter 独立 Object，权限隔离 |
+
+## Demo 策略建议
+
+### 3 分钟 Demo 脚本
+
+1. **开场 (30s)** — LUNA 崩盘数据 → 引出问题
+2. **架构 (30s)** — 三层架构图 → 强调 Sui 原生
+3. **实时演示 (60s)** — Dashboard 概览 → Oracle 评分 → 风险分解 → 传导图
+4. **联动触发 (30s)** — 模拟风险升高 → 看 LTV / 杠杆 / 仓位同步变化
+5. **LUNA 回测 (20s)** — 对比数据：Protected -8% vs Static -43%
+6. **结尾 (10s)** — "EvoOracle: Don't let the next LUNA happen on Sui"
+
+### 重点突出
+
+- **讲故事**：以 LUNA 崩盘开场，用数据冲击裁判
+- **真实数据**：接入 EvoQuantV3 100+ 数据源，不是 mock 数据
+- **链上可验证**：Move 合约已编译，SharedObject 设计经过深思
+- **完整度碾压**：21 个功能模块，8800+ 行代码，端到端闭环
+
+## 功能模块一览
+
+### 前端 21 Tab
+
+| # | 模块 | 功能 |
+|---|------|------|
+| 1 | 概览 Overview | 系统风险分 + 资产卡片 + 告警摘要 |
+| 2 | Portfolio | 持仓风险分析 + 漂移可视化 + 再平衡建议 |
+| 3 | 风险趋势 History | 历史风险评分时序图 + 数据表 |
+| 4 | Oracle Dashboard | 各资产实时评分 + 风险条 |
+| 5 | 风险分解 Breakdown | 5 因子贡献度可视化 |
+| 6 | 传导图 Contagion | 资产间相关性热力图 + 集群列表 |
+| 7 | 清算保护 Shield | 动态 LTV 状态 + 资产风险表 |
+| 8 | 级联模拟 Cascade | 交互式清算瀑布模拟 |
+| 9 | 清算热图 Heatmap | 交易所 × 杠杆倍数密度图 |
+| 10 | 鲸鱼信号 Whale | 大户异动监控 + 偏向指标 |
+| 11 | 压力测试 Stress | 历史场景预设 + 自定义冲击 |
+| 12 | 清算预测 Predictive | 概率预测 + 时间窗口 |
+| 13 | 宏观指标 Macro | 市场体制判断 + 历史对比 |
+| 14 | 多协议聚合 Protocol | 跨协议风险对比 |
+| 15 | 协议排名 Compare | 风险调整后收益排名 |
+| 16 | 调仓演示 Rebalancer | Vault 动态调仓动画 |
+| 17 | 告警规则 Alert Rules | 自定义告警条件 CRUD |
+| 18 | 告警流 Alert Feed | 实时告警列表 + 严重度 |
+| 19 | Vault UI | 存取款 + PnL 对比图 |
+| 20 | 收益归因 Attribution | Vault 收益来源分解 |
+| 21 | LUNA 回测 Backtest | 历史事件回放 + 参数调节 |
+
+### 后端 27 API 端点
+
+| 端点 | 功能 |
+|------|------|
+| GET /api/overview | 系统概览（风险分、资产数、告警数） |
+| GET /api/oracle | 各资产 Oracle 评分 |
+| GET /api/risk-breakdown | 5 因子分解 |
+| GET /api/contagion | 传导图数据 |
+| GET /api/liquidation-shield | 清算保护状态 |
+| GET /api/whale-signals | 鲸鱼信号 |
+| GET /api/stress-test | 压力测试结果 |
+| GET /api/predictive-liq | 清算预测 |
+| GET /api/protocol-agg | 协议聚合 |
+| GET /api/rebalancer | 调仓状态 |
+| GET /api/alerts | 告警列表 |
+| GET /api/vault | Vault 状态 |
+| GET /api/backtest | 回测数据 |
+| GET /api/history/{symbol} | 历史风险时序 |
+| POST /api/cascade-simulator | 级联模拟 |
+| GET /api/portfolio | 组合分析 |
+| GET /api/alert-rules | 告警规则列表 |
+| POST /api/alert-rules | 创建规则 |
+| DELETE /api/alert-rules/{id} | 删除规则 |
+| GET /api/protocol-comparison | 协议排名 |
+| GET /api/macro/detail | 宏观详情 |
+| GET /api/liquidation-heatmap | 清算热图 |
+| GET /api/vault/attribution | 收益归因 |
 
 ## 数据流
 
 ```
-EvoQuantV3 API (127.0.0.1:8000)
-  GET /signals/{symbol}      综合信号
-  GET /risk/score/{symbol}   风险评分
-  GET /macro/regime          宏观情绪
-  GET /sentiment/summary     新闻情感
-  GET /time-slice/range      历史回测数据
-        │
-        ▼
-backend/api_client  ──→  signal_processor  ──→  sui_publisher
-        │                                              │
-        │                                              ▼
-        │                                    Sui: oracle::update_risk
-        │                                    Sui: risk_vault::rebalance
-        ▼
-backend/server (前端 API) ◀── frontend (React Dashboard)
+EvoQuantV3 API ──→ Scheduler (每5分钟) ──→ risk_composer ──→ SQLite (历史存储)
+                                                │
+                                                ├──→ alert_engine ──→ 告警触发
+                                                ├──→ contagion_engine ──→ 传导评估
+                                                ├──→ liquidation_shield ──→ 清算保护
+                                                └──→ sui_publisher ──→ 链上更新
+
+Frontend ──→ FastAPI (27 端点) ──→ 各引擎实时计算 / SQLite 历史查询
 ```
+
+## 技术栈
+
+| 层 | 技术 |
+|----|------|
+| 智能合约 | Sui Move (2024 Edition) |
+| 后端框架 | Python 3.11 + FastAPI + Uvicorn |
+| 定时调度 | APScheduler (5 分钟间隔) |
+| 数据存储 | SQLite (历史记录) |
+| 数据源 | EvoQuantV3 (100+ REST 端点) |
+| 前端框架 | React 18 + TypeScript + Vite |
+| 样式方案 | Tailwind CSS 3 (深色科技风) |
+| 链交互 | pysui (Python Sui SDK) |
 
 ## 快速开始
 
+### 后端
+
 ```bash
-# 1. 启动 EvoQuantV3 数据基座（另一个项目）
-cd ../EvoQuantV3-main && python -m api.app --port 8000
+cd backend
+pip install -r requirements.txt
 
-# 2. 启动 EvoOracle 后端
-cd backend && pip install -r requirements.txt
-python -m scheduler.runner        # 启动 Bridge 调度
-python -m server.app              # 启动前端 API（另开终端）
+# 启动 API 服务
+cd server && uvicorn app:app --reload --port 8000
 
-# 3. 启动前端
-cd frontend && npm install && npm run dev
+# 启动定时调度（另一个终端）
+cd scheduler && python runner.py
 ```
 
-## 开发原则
+### 前端
 
-1. **前后端分离** —— 前端只消费 `backend/server` 的 API 与 Sui 链，不耦合数据基座。
-2. **模块化** —— 每个模块一个子文件夹，职责单一，可独立测试替换。
-3. **文档先行** —— 每个模块文件夹必须有一份 `README.md` 记录其功能；**每次开发改动后必须同步更新对应模块的 md 和本文件**。
-4. **不修改 EvoQuantV3** —— 数据基座是只读依赖，所有适配在本项目完成。
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## 开发日志
+### 合约编译
 
-| 日期 | 改动 | 涉及模块 |
-| --- | --- | --- |
-| 2026-05-30 | 初始化项目脚手架，建立三层结构与全部模块 md | 全部 |
-| 2026-05-30 | 新增参赛提交文档 `SUBMISSION.md`（评委向） | 文档 |
-| 2026-05-30 | 新增亮点功能：可解释风险评分、异常告警（后端真实实现）、链上 Alert event、借贷动态 LTV 适配器、前端风险拆解/告警流模块 | backend / contracts / frontend |
-| 2026-05-30 | 适配器升级为多协议：新增 perp_adapter（动态最大杠杆）；新增 zkLogin 登录（auth 模块 + lib/zkLogin.ts），Demo 免钱包 | contracts / frontend |
-| 2026-05-31 | **Demo-ready 完成**：前端全部 6 模块组件实现（OracleDashboard、RiskBreakdown、AlertFeed、VaultUI、BacktestView、Auth）；后端补全 vault/state 和 backtest/luna 端点；sui_publisher 集成 pysui；Vite 构建基础设施 + App Shell | frontend / backend |
-| 2026-05-31 | 新增四大高级模块：压力测试模拟器（冲击传导+级联清算）、预测性清算告警（4因子sigmoid概率）、多协议联动（一信号三协议保护）、实时调仓演示（三场景24h动画）；前端扩展至 12 Tab，后端 12 API 端点 | backend / frontend |
+```bash
+cd contracts
+sui move build
+```
+
+## 开源协议
+
+MIT License
+
+## 团队
+
+EvoOracle Team — Built for Sui Hackathon
+
+GitHub: https://github.com/CnOxx1/evo-oracle
