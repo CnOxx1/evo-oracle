@@ -1,40 +1,43 @@
 """鲸鱼风险信号引擎。
 
-基于资金流向 + 相对强弱数据推断大资金动向，
-待 EvoQuantV3 链上鲸鱼数据就绪后切换为真实数据源。
+基于 EvoQuantV3 /onchain/whale-activity 真实数据 + 相对强弱 + 资金费率
+综合推断大资金动向。
 """
 
 from __future__ import annotations
 
 from typing import Any
 
+from api_client.client import EvoQuantClient, EvoQuantAPIError
 
-def compute_whale_signals(
-    fund_flow: dict[str, Any],
-    relative_strength: dict[str, Any],
-    funding_all: dict[str, Any],
-    portfolio_risk: dict[str, Any],
-) -> dict[str, Any]:
-    """推断鲸鱼行为信号。
 
-    当前基于：
-    - 资金流向（板块净流入/流出）→ 大资金方向
-    - 相对强弱突变 → 异常买卖压力
-    - 资金费率方向 → 杠杆仓位偏好
+async def compute_whale_signals_async() -> dict[str, Any]:
+    """从 EvoQuantV3 拉取真实鲸鱼活动数据 + RS + 资金费率，综合推断。"""
+    async with EvoQuantClient() as client:
+        try:
+            rs_data_raw = await client.get_relative_strength()
+            funding_all = await client.get_funding_all()
+        except EvoQuantAPIError as e:
+            return {"error": f"数据获取失败: {e}"}
 
-    待接入（EvoQuantV3 开发中）：
-    - /onchain/whale-activity → 真实鲸鱼转账
-    - /onchain/exchange-flow → 交易所充提
-    """
-    rs_data = relative_strength.get("data", [])
-    flow_data = fund_flow.get("data", [])
-    funding_rates = funding_all.get("funding_rates", {})
-    risk_contribs = portfolio_risk.get("risk_contributions", {})
+        # 获取各资产鲸鱼活动数据
+        rs_data = rs_data_raw.get("data", [])
+        funding_rates = funding_all.get("funding_rates", {})
+        symbols = [item.get("asset", item["symbol"].replace("/USDT", ""))
+                   for item in rs_data]
+
+        whale_map: dict[str, dict[str, Any]] = {}
+        for sym in symbols:
+            try:
+                whale_map[sym] = await client.get_whale_activity(sym)
+            except EvoQuantAPIError:
+                whale_map[sym] = {}
 
     # 构建资金费率查找表
     funding_lookup: dict[str, dict] = {}
     for symbol, data in funding_rates.items():
-        funding_lookup[symbol] = data
+        clean = symbol.replace("/USDT", "").replace("USDT", "")
+        funding_lookup[clean] = data
 
     # ─── 逐资产鲸鱼信号推断 ───
     signals = []
@@ -42,31 +45,43 @@ def compute_whale_signals(
         symbol = item["symbol"]
         asset = item.get("asset", symbol.replace("/USDT", ""))
         rs_7d = item.get("rs_vs_btc_7d", 0)
-        rs_3d = item.get("rs_vs_btc_3d", 0)
         rs_1d = item.get("rs_vs_btc_1d", 0)
         momentum = item.get("rs_momentum", "flat")
         price_chg = item.get("price_change_7d_pct", 0)
 
-        funding = funding_lookup.get(symbol, {})
-        avg_rate = funding.get("avg_rate", 0)
-        risk_contrib = risk_contribs.get(symbol, 0)
+        # 真实鲸鱼活动数据
+        whale_data = whale_map.get(asset, {})
+        activity_score = whale_data.get("activity_score", 0)
+        whale_signal_raw = whale_data.get("whale_signal", "unknown")
+        volume_spike = whale_data.get("volume_spike", False)
+        price_move_6h = whale_data.get("price_move_6h_pct", 0)
+        oi_change_24h = whale_data.get("oi_change_24h", 0)
 
-        # ─── 鲸鱼行为推断逻辑 ───
-        # RS 突变 = 异常买卖压力（可能是鲸鱼）
+        # 资金费率
+        funding = funding_lookup.get(asset, {})
+        avg_rate = funding.get("rate", funding.get("avg_rate", 0))
+        funding_bias = (
+            "long_heavy" if avg_rate > 0.0002
+            else "short_heavy" if avg_rate < -0.0002
+            else "neutral"
+        )
+
+        # 综合信号强度：真实 activity_score + RS 偏离 + 资金费率
         rs_divergence = abs(rs_1d - rs_7d)
-        # 资金费率方向 = 杠杆偏好
-        funding_bias = "long_heavy" if avg_rate > 0.0002 else "short_heavy" if avg_rate < -0.0002 else "neutral"
+        signal_strength = min(100, activity_score * 0.6
+                              + rs_divergence * 8
+                              + abs(avg_rate) * 30000)
 
-        # 综合鲸鱼信号强度
-        signal_strength = min(100, rs_divergence * 10 + abs(avg_rate) * 50000)
-
-        # 判断鲸鱼行为方向
-        if rs_1d > rs_3d > 0 and avg_rate > 0:
+        # 判断鲸鱼行为方向（结合真实数据）
+        if activity_score >= 50 and price_move_6h > 1 and avg_rate > 0:
             whale_action = "accumulating"
             direction = "bullish"
-        elif rs_1d < rs_3d < 0 and avg_rate < 0:
+        elif activity_score >= 50 and price_move_6h < -1 and avg_rate < 0:
             whale_action = "distributing"
             direction = "bearish"
+        elif activity_score >= 40 or volume_spike:
+            whale_action = "repositioning"
+            direction = "uncertain"
         elif rs_divergence > 3:
             whale_action = "repositioning"
             direction = "uncertain"
@@ -76,16 +91,19 @@ def compute_whale_signals(
 
         signals.append({
             "symbol": asset,
-            "full_symbol": symbol,
             "whale_action": whale_action,
             "direction": direction,
             "signal_strength": round(signal_strength, 1),
+            "activity_score": activity_score,
+            "whale_signal_raw": whale_signal_raw,
+            "volume_spike": volume_spike,
+            "price_move_6h": price_move_6h,
+            "oi_change_24h": oi_change_24h,
             "rs_momentum": momentum,
             "rs_7d": round(rs_7d, 4),
             "rs_1d": round(rs_1d, 4),
             "funding_bias": funding_bias,
             "funding_rate": round(avg_rate, 6),
-            "risk_contribution": round(risk_contrib, 6),
             "price_change_7d": price_chg,
         })
 
@@ -117,9 +135,5 @@ def compute_whale_signals(
         "signals": signals,
         "top_accumulating": accumulating[:3],
         "top_distributing": distributing[:3],
-        "data_source": "relative_strength_proxy",
-        "pending_upgrade": [
-            "/onchain/whale-activity — 真实鲸鱼转账记录",
-            "/onchain/exchange-flow — 交易所充提净流量",
-        ],
+        "data_source": "evoquantv3_whale_activity",
     }

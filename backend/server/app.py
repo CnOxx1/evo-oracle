@@ -335,23 +335,19 @@ async def liquidation_shield() -> dict[str, Any]:
 
 @app.get("/api/whale-signals")
 async def whale_signals() -> dict[str, Any]:
-    """鲸鱼风险信号：资金流向 + 相对强弱 + 资金费率 → 大资金动向。"""
+    """鲸鱼风险信号：真实鲸鱼活动数据 + 相对强弱 + 资金费率 → 大资金动向。"""
     cache_key = "whale_signals"
     if (cached := _cache_get(cache_key)) is not None:
         return cached
 
-    from whale_signal import compute_whale_signals
+    from whale_signal import compute_whale_signals_async
 
-    async with EvoQuantClient() as client:
-        try:
-            fund_flow = await client.get_fund_flow()
-            rs = await client.get_relative_strength()
-            funding = await client.get_funding_all()
-            portfolio = await client.get_portfolio_risk()
-        except EvoQuantAPIError as e:
-            raise HTTPException(status_code=502, detail=f"EvoQuantV3 不可用: {e}")
+    result = await compute_whale_signals_async()
+    if "error" in result:
+        raise HTTPException(status_code=502, detail=result["error"])
 
-    result = compute_whale_signals(fund_flow, rs, funding, portfolio)
+    _cache_set(cache_key, result)
+    return result
     _cache_set(cache_key, result)
     return result
 
