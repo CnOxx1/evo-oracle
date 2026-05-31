@@ -26,34 +26,55 @@ import { VaultAttribution } from "./modules/vault_attribution/VaultAttribution";
 
 type Tab = "overview" | "oracle" | "risk" | "alerts" | "contagion" | "liquidation" | "whale" | "vault" | "backtest" | "stress" | "predictive" | "protocol" | "rebalancer" | "history" | "cascade" | "portfolio" | "alert_rules" | "proto_compare" | "macro" | "liq_heatmap" | "vault_attr";
 
-const TABS: { key: Tab; label: string }[] = [
-  { key: "overview", label: "概览" },
-  { key: "portfolio", label: "Portfolio" },
-  { key: "history", label: "趋势" },
-  { key: "oracle", label: "Oracle" },
-  { key: "risk", label: "风险分解" },
-  { key: "contagion", label: "传导图" },
-  { key: "liquidation", label: "清算保护" },
-  { key: "cascade", label: "清算瀑布" },
-  { key: "liq_heatmap", label: "清算热图" },
-  { key: "whale", label: "鲸鱼信号" },
-  { key: "stress", label: "压力测试" },
-  { key: "predictive", label: "清算预测" },
-  { key: "macro", label: "宏观状态" },
-  { key: "protocol", label: "多协议" },
-  { key: "proto_compare", label: "协议排名" },
-  { key: "rebalancer", label: "调仓演示" },
-  { key: "alert_rules", label: "告警规则" },
-  { key: "alerts", label: "告警" },
-  { key: "vault", label: "Vault" },
-  { key: "vault_attr", label: "收益归因" },
-  { key: "backtest", label: "回测" },
+interface TabGroup {
+  key: string;
+  label: string;
+  tabs: { key: Tab; label: string }[];
+}
+
+const TAB_GROUPS: TabGroup[] = [
+  { key: "overview", label: "总览", tabs: [
+    { key: "overview", label: "概览" },
+    { key: "portfolio", label: "Portfolio" },
+    { key: "history", label: "趋势" },
+  ]},
+  { key: "oracle", label: "Oracle", tabs: [
+    { key: "oracle", label: "Oracle" },
+    { key: "risk", label: "风险分解" },
+    { key: "macro", label: "宏观状态" },
+  ]},
+  { key: "liquidation", label: "清算", tabs: [
+    { key: "liquidation", label: "清算保护" },
+    { key: "cascade", label: "清算瀑布" },
+    { key: "liq_heatmap", label: "清算热图" },
+    { key: "predictive", label: "清算预测" },
+  ]},
+  { key: "market", label: "市场", tabs: [
+    { key: "contagion", label: "传导图" },
+    { key: "whale", label: "鲸鱼信号" },
+    { key: "stress", label: "压力测试" },
+  ]},
+  { key: "protocol", label: "协议", tabs: [
+    { key: "protocol", label: "多协议" },
+    { key: "proto_compare", label: "协议排名" },
+    { key: "rebalancer", label: "调仓演示" },
+    { key: "vault", label: "Vault" },
+    { key: "vault_attr", label: "收益归因" },
+  ]},
+  { key: "alerts", label: "告警", tabs: [
+    { key: "alert_rules", label: "告警规则" },
+    { key: "alerts", label: "告警流" },
+    { key: "backtest", label: "回测" },
+  ]},
 ];
 
 export default function App() {
   const [showLanding, setShowLanding] = useState(true);
   const [tab, setTab] = useState<Tab>("overview");
+  const [activeGroup, setActiveGroup] = useState("overview");
   const [selectedSymbol, setSelectedSymbol] = useState("SUI");
+
+  const currentGroup = TAB_GROUPS.find((g) => g.key === activeGroup)!;
 
   useEffect(() => {
     if (window.location.hash.includes("id_token")) {
@@ -72,22 +93,37 @@ export default function App() {
           <h1 className="text-xl font-bold gradient-text whitespace-nowrap mr-auto">
             EvoOracle
           </h1>
-          <nav className="flex gap-1 overflow-x-auto max-w-full pb-1 scrollbar-thin">
-            {TABS.map((t) => (
+          <nav className="flex gap-2">
+            {TAB_GROUPS.map((g) => (
               <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                className={`px-3 py-1.5 rounded-lg text-sm whitespace-nowrap transition-all duration-200 cursor-pointer
-                  ${tab === t.key
+                key={g.key}
+                onClick={() => { setActiveGroup(g.key); setTab(g.tabs[0].key); }}
+                className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 cursor-pointer
+                  ${activeGroup === g.key
                     ? "bg-accent/20 text-text-primary font-semibold shadow-[0_0_12px_rgba(108,99,255,0.3)]"
                     : "text-text-secondary hover:text-text-primary hover:bg-bg-card/50"
                   }`}
               >
-                {t.label}
+                {g.label}
               </button>
             ))}
           </nav>
           <LoginButton />
+        </div>
+        <div className="flex gap-1 mt-3 pt-3 border-t border-white/5">
+          {currentGroup.tabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`px-3 py-1 rounded-md text-xs whitespace-nowrap transition-all duration-200 cursor-pointer
+                ${tab === t.key
+                  ? "bg-accent/15 text-text-primary font-semibold"
+                  : "text-text-secondary hover:text-text-primary hover:bg-bg-card/40"
+                }`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
       </header>
 

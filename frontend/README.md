@@ -19,6 +19,19 @@ EvoOracle 的前端 Dashboard。展示链上信号、Vault 对比与历史回测
 
 前端**不直接**访问 EvoQuantV3（127.0.0.1:8000）。
 
+## 导航结构
+
+Dashboard 采用分组导航，顶部 6 个分组按钮，点击后展开子 Tab：
+
+| 分组 | 子 Tab |
+| --- | --- |
+| 总览 | 概览、Portfolio、趋势 |
+| Oracle | Oracle、风险分解、宏观状态 |
+| 清算 | 清算保护、清算瀑布、清算热图、清算预测 |
+| 市场 | 传导图、鲸鱼信号、压力测试 |
+| 协议 | 多协议、协议排名、调仓演示、Vault、收益归因 |
+| 告警 | 告警规则、告警流、回测 |
+
 ## 模块结构
 
 每个模块一个文件夹，独立 md：
@@ -92,3 +105,4 @@ npm run dev          # 默认 http://localhost:5173
 | 2026-05-30 | 新增 auth（zkLogin）模块与 lib/zkLogin.ts 登录流程工具 |
 | 2026-05-31 | 完成全部前端组件实现：OracleDashboard、RiskBreakdown、AlertFeed、VaultUI、BacktestView、Auth；新增 API client、suiClient、format 工具；Vite 构建基础设施（vite.config.ts、tsconfig.json、index.html、main.tsx、index.css 暗色主题）；App Shell Tab 导航 |
 | 2026-05-31 | 新增四大高级模块：StressTest（压力测试模拟器）、PredictiveLiq（清算概率预测）、ProtocolAgg（多协议联动对比）、RebalancerDemo（三场景调仓动画）；Tab 导航扩展至 12 页 |
+| 2026-05-31 | 导航重构：21 个平铺 Tab 改为 6 分组导航（总览/Oracle/清算/市场/协议/告警），顶部只显示分组按钮，点击展开子 Tab |
