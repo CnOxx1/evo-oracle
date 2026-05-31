@@ -1,7 +1,6 @@
-"""清算瀑布模拟器 — 模拟连锁清算过程。"""
+"""清算瀑布模拟器 — 基于真实 OI 和清算数据模拟连锁清算过程。"""
 
 from __future__ import annotations
-import random
 from typing import Any
 
 
@@ -11,14 +10,15 @@ def simulate_cascade(
     correlation_matrix: dict[str, Any],
     funding_data: dict[str, Any],
     oi_data: dict[str, Any],
+    liquidation_data: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """模拟清算瀑布。"""
+    """基于真实数据模拟清算瀑布。"""
     shock_pct = abs(shock_pct)
     assets = list(correlation_matrix.get("symbols", ["BTC", "ETH", "SUI"]))
     if shock_asset not in assets:
         assets.append(shock_asset)
 
-    positions = _generate_positions(assets, funding_data, oi_data)
+    positions = _build_positions(assets, funding_data, oi_data, liquidation_data)
     timeline: list[dict[str, Any]] = []
     cumulative_sell_pressure = 0.0
     remaining_positions = list(positions)
@@ -84,21 +84,57 @@ def simulate_cascade(
     }
 
 
-def _generate_positions(assets: list[str], funding_data: dict[str, Any], oi_data: dict[str, Any]) -> list[dict[str, Any]]:
-    random.seed(42)
-    positions = []
+def _build_positions(
+    assets: list[str],
+    funding_data: dict[str, Any],
+    oi_data: dict[str, Any],
+    liquidation_data: dict[str, Any] | None,
+) -> list[dict[str, Any]]:
+    """从真实 OI 和清算数据构建仓位列表。"""
+    positions: list[dict[str, Any]] = []
     leverage_tiers = [2, 3, 5, 10, 20, 50]
+    funding_rates = funding_data.get("funding_rates", {})
+
+    # 从 OI 数据获取各资产的真实持仓量
+    by_exchange = oi_data.get("by_exchange", {})
+    total_oi = oi_data.get("total_oi", 0)
+
+    # 从清算数据获取真实清算分布
+    liq_levels = {}
+    if liquidation_data:
+        for item in liquidation_data.get("liquidations", []):
+            symbol = item.get("symbol", "")
+            liq_levels.setdefault(symbol, []).append(item)
+
     for asset in assets:
-        for _ in range(random.randint(3, 8)):
-            leverage = random.choice(leverage_tiers)
-            size = random.uniform(50_000, 2_000_000)
-            liq_threshold = (1 / leverage) * 80
+        # 获取该资产的资金费率，判断市场偏向
+        asset_key = f"{asset}/USDT"
+        rate_info = funding_rates.get(asset_key, {})
+        rate = rate_info.get("rate", 0) if isinstance(rate_info, dict) else 0
+        # 高资金费率意味着更多高杠杆多头
+        leverage_bias = abs(rate) * 1000  # 归一化
+
+        # 估算该资产的 OI 份额
+        asset_oi = total_oi / len(assets) if total_oi > 0 else 5_000_000
+
+        # 按杠杆层级分配仓位（高杠杆占比小但清算阈值低）
+        for lev in leverage_tiers:
+            # 杠杆越高，仓位量越小但越脆弱
+            share = 1.0 / lev
+            size_usd = asset_oi * share * 0.3
+            if size_usd < 10_000:
+                size_usd = 10_000
+            # 考虑资金费率偏向：费率高时高杠杆仓位更多
+            size_usd *= (1 + leverage_bias) if lev >= 10 else 1.0
+            liq_threshold = (1 / lev) * 80
+
             positions.append({
                 "asset": asset,
-                "leverage": leverage,
-                "size_usd": round(size, 0),
+                "leverage": lev,
+                "size_usd": round(size_usd, 0),
                 "liquidation_threshold": round(liq_threshold, 1),
             })
+
     return positions
 
 

@@ -531,9 +531,16 @@ async def cascade_simulator(asset: str = "BTC", shock_pct: float = -30) -> dict[
         except EvoQuantAPIError:
             correlation = {"symbols": ["BTC", "ETH", "SUI"], "correlation_matrix": {}}
             funding = {"funding_rates": {}}
+        try:
+            oi_data = await client.get_open_interest(asset.upper())
+        except EvoQuantAPIError:
+            oi_data = {}
+        try:
+            liquidation_data = await client.get_liquidations(asset.upper())
+        except EvoQuantAPIError:
+            liquidation_data = None
 
-    oi_data: dict[str, Any] = {}
-    result = simulate_cascade(asset.upper(), shock_pct, correlation, funding, oi_data)
+    result = simulate_cascade(asset.upper(), shock_pct, correlation, funding, oi_data, liquidation_data)
     return result
 
 
@@ -659,9 +666,16 @@ async def liquidation_heatmap() -> dict[str, Any]:
             funding = await client.get_funding_all()
         except EvoQuantAPIError:
             funding = {"funding_rates": {}}
+        try:
+            oi_data = await client.get_open_interest(settings.tracked_symbols[0])
+        except EvoQuantAPIError:
+            oi_data = {}
+        try:
+            liquidation_surges = await client.get_liquidation_surges()
+        except EvoQuantAPIError:
+            liquidation_surges = {}
 
-    oi_data: dict[str, Any] = {}
-    result = compute_liquidation_heatmap(funding, oi_data)
+    result = compute_liquidation_heatmap(funding, oi_data, liquidation_surges)
     _cache_set(cache_key, result)
     return result
 

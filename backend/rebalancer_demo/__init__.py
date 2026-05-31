@@ -1,14 +1,12 @@
-"""Risk-Aware Auto-Rebalancer Demo - 实时调仓演示。
+"""Risk-Aware Auto-Rebalancer Demo - 基于真实历史数据的调仓演示。
 
-模拟 Oracle 信号变化时 Vault 如何实时调仓，
-输出时间序列动画数据（三种场景：normal / stress / crash）。
+从 EvoQuantV3 获取历史风险评分时序数据，展示 Vault 如何实时调仓。
+支持三种场景：normal / stress / crash（从真实历史中选取对应时段）。
 """
 
 from __future__ import annotations
 
 import time
-import math
-import random
 from typing import Any
 
 from api_client.client import EvoQuantClient, EvoQuantAPIError
@@ -27,61 +25,15 @@ def _risk_to_sui_pct(risk_score: int) -> int:
     return max(MIN_SUI_PCT, min(MAX_SUI_PCT, int(85 - risk_score * 0.8)))
 
 
-def _generate_risk_series(
-    base_score: int, scenario: str
-) -> list[int]:
-    """生成模拟风险信号时间序列。
-
-    Args:
-        base_score: 当前真实风险评分（起始点）
-        scenario: normal / stress / crash
-    """
-    total_points = TIMELINE_HOURS * POINTS_PER_HOUR
-    series: list[int] = []
-    score = float(base_score)
-    random.seed(42)  # 可复现
-
-    for i in range(total_points):
-        progress = i / total_points
-
-        if scenario == "normal":
-            # 平稳波动：在 base_score 附近 +/- 10
-            noise = random.gauss(0, 3)
-            drift = math.sin(progress * math.pi * 4) * 5
-            score = base_score + drift + noise
-
-        elif scenario == "stress":
-            # 压力场景：前半段缓慢上升，后半段高位震荡
-            if progress < 0.4:
-                score += random.gauss(0.5, 0.8)
-            elif progress < 0.7:
-                score += random.gauss(0.8, 1.2)
-            else:
-                score += random.gauss(-0.3, 1.5)
-
-        elif scenario == "crash":
-            # 崩盘场景：快速飙升到极端值
-            if progress < 0.2:
-                score += random.gauss(0.3, 0.5)
-            elif progress < 0.4:
-                score += random.gauss(2.5, 1.0)
-            elif progress < 0.6:
-                score += random.gauss(1.5, 0.8)
-            else:
-                score += random.gauss(-1.0, 1.5)
-
-        series.append(max(0, min(100, int(score))))
-
-    return series
-
-
 def _build_timeline(
-    base_score: int, scenario: str, start_ts: int
+    risk_series: list[int], start_ts: int
 ) -> list[dict[str, Any]]:
-    """构建单个场景的时间序列数据。"""
-    risk_series = _generate_risk_series(base_score, scenario)
+    """构建时间序列数据。"""
     timeline: list[dict[str, Any]] = []
-    current_sui_pct = _risk_to_sui_pct(base_score)
+    if not risk_series:
+        return timeline
+
+    current_sui_pct = _risk_to_sui_pct(risk_series[0])
     interval_seconds = 3600 // POINTS_PER_HOUR  # 15 分钟
 
     for i, risk_score in enumerate(risk_series):
@@ -89,7 +41,6 @@ def _build_timeline(
         target_sui_pct = _risk_to_sui_pct(risk_score)
         deviation = abs(target_sui_pct - current_sui_pct)
 
-        # 判断是否触发调仓
         action = "hold"
         trigger = None
         if deviation >= REBALANCE_THRESHOLD:
@@ -114,10 +65,105 @@ def _build_timeline(
     return timeline
 
 
+async def _fetch_risk_series(client: EvoQuantClient, scenario: str) -> tuple[list[int], int]:
+    """从 EvoQuantV3 获取真实历史风险数据作为时间序列。
+
+    根据场景选取不同时间窗口：
+    - normal: 最近 24h
+    - stress: 最近 72h 中波动最大的 24h 窗口
+    - crash: 最近 168h (7天) 中风险最高的 24h 窗口
+    """
+    total_points = TIMELINE_HOURS * POINTS_PER_HOUR
+    now = int(time.time())
+
+    # 根据场景决定回溯范围
+    lookback_hours = {"normal": 24, "stress": 72, "crash": 168}
+    hours = lookback_hours.get(scenario, 24)
+    start = now - hours * 3600
+    interval = 900  # 15 分钟
+
+    try:
+        data = await client.get_time_slice_range(
+            start=str(start), end=str(now),
+            interval=interval, symbols="SUI", domains="risk"
+        )
+    except EvoQuantAPIError:
+        data = {}
+
+    # 从返回数据中提取风险评分序列
+    slices = data.get("slices", data.get("data", []))
+    all_scores: list[int] = []
+    for s in slices:
+        score = s.get("risk_score", s.get("score", None))
+        if score is not None:
+            all_scores.append(max(0, min(100, int(score))))
+
+    if not all_scores:
+        # 如果历史数据不可用，从当前实时评分构建
+        try:
+            risk = await client.get_risk_score("SUI")
+            base = int(risk.get("risk_score", 45))
+        except EvoQuantAPIError:
+            base = 45
+        all_scores = [base] * total_points
+        return all_scores[:total_points], now - total_points * 900
+
+    # 根据场景选取最合适的 24h 窗口
+    if scenario == "normal":
+        # 取最近 24h 数据
+        selected = all_scores[-total_points:]
+    elif scenario == "stress":
+        # 取波动最大的 24h 窗口
+        selected = _find_most_volatile_window(all_scores, total_points)
+    elif scenario == "crash":
+        # 取风险最高的 24h 窗口
+        selected = _find_highest_risk_window(all_scores, total_points)
+    else:
+        selected = all_scores[-total_points:]
+
+    # 补齐不足的数据点
+    if len(selected) < total_points:
+        pad = selected[-1] if selected else 45
+        selected.extend([pad] * (total_points - len(selected)))
+
+    start_ts = now - len(selected) * 900
+    return selected[:total_points], start_ts
+
+
+def _find_most_volatile_window(scores: list[int], window: int) -> list[int]:
+    """找到波动最大的窗口。"""
+    if len(scores) <= window:
+        return scores
+    best_start = 0
+    best_vol = 0.0
+    for i in range(len(scores) - window):
+        chunk = scores[i:i + window]
+        vol = max(chunk) - min(chunk)
+        if vol > best_vol:
+            best_vol = vol
+            best_start = i
+    return scores[best_start:best_start + window]
+
+
+def _find_highest_risk_window(scores: list[int], window: int) -> list[int]:
+    """找到平均风险最高的窗口。"""
+    if len(scores) <= window:
+        return scores
+    best_start = 0
+    best_avg = 0.0
+    for i in range(len(scores) - window):
+        chunk = scores[i:i + window]
+        avg = sum(chunk) / len(chunk)
+        if avg > best_avg:
+            best_avg = avg
+            best_start = i
+    return scores[best_start:best_start + window]
+
+
 async def generate_rebalance_demo(
     scenario: str = "all",
 ) -> dict[str, Any]:
-    """生成调仓演示时间序列数据。
+    """生成调仓演示时间序列数据（基于真实历史风险评分）。
 
     Args:
         scenario: "normal" / "stress" / "crash" / "all"
@@ -125,45 +171,40 @@ async def generate_rebalance_demo(
     Returns:
         时间序列动画数据，包含各时间点的仓位和操作。
     """
-    # 获取当前真实风险评分作为起始点
-    async with EvoQuantClient() as client:
-        try:
-            portfolio = await client.get_portfolio_risk()
-        except EvoQuantAPIError:
-            portfolio = {}
-
-    # 从组合风险数据推断当前风险评分
-    ann_vol = portfolio.get("annualized_volatility", 0.5)
-    var_95 = abs(portfolio.get("var_95", 0.03))
-    # 将波动率和 VaR 映射到 0-100 风险评分
-    base_score = int(min(ann_vol * 80 + var_95 * 500, 100))
-    base_score = max(20, min(80, base_score))  # 合理范围
-
-    start_ts = int(time.time())
     scenarios_to_run = (
         ["normal", "stress", "crash"] if scenario == "all"
         else [scenario]
     )
 
     results: dict[str, Any] = {}
-    for sc in scenarios_to_run:
-        timeline = _build_timeline(base_score, sc, start_ts)
-        rebalance_count = sum(1 for t in timeline if t["action"] != "hold")
-        max_risk = max(t["risk_score"] for t in timeline)
-        min_sui = min(t["sui_pct"] for t in timeline)
+    base_score = 45
 
-        results[sc] = {
-            "timeline": timeline,
-            "stats": {
-                "total_points": len(timeline),
-                "rebalance_count": rebalance_count,
-                "max_risk_score": max_risk,
-                "min_sui_exposure_pct": min_sui,
-                "max_usdc_pct": 100 - min_sui,
-                "duration_hours": TIMELINE_HOURS,
-                "interval_minutes": 60 // POINTS_PER_HOUR,
-            },
-        }
+    async with EvoQuantClient() as client:
+        for sc in scenarios_to_run:
+            risk_series, start_ts = await _fetch_risk_series(client, sc)
+            if sc == scenarios_to_run[0]:
+                base_score = risk_series[0] if risk_series else 45
+
+            timeline = _build_timeline(risk_series, start_ts)
+            rebalance_count = sum(
+                1 for t in timeline if t["action"] != "hold")
+            max_risk = max(
+                (t["risk_score"] for t in timeline), default=0)
+            min_sui = min(
+                (t["sui_pct"] for t in timeline), default=MIN_SUI_PCT)
+
+            results[sc] = {
+                "timeline": timeline,
+                "stats": {
+                    "total_points": len(timeline),
+                    "rebalance_count": rebalance_count,
+                    "max_risk_score": max_risk,
+                    "min_sui_exposure_pct": min_sui,
+                    "max_usdc_pct": 100 - min_sui,
+                    "duration_hours": TIMELINE_HOURS,
+                    "interval_minutes": 60 // POINTS_PER_HOUR,
+                },
+            }
 
     return {
         "base_risk_score": base_score,
@@ -175,7 +216,9 @@ async def generate_rebalance_demo(
             "max_sui_pct": MAX_SUI_PCT,
         },
         "methodology": (
-            "从当前真实风险评分出发，模拟未来24h三种场景的风险变化，"
+            "从 EvoQuantV3 获取真实历史风险评分时序数据，"
+            "根据场景选取对应时间窗口（normal=最近24h, "
+            "stress=波动最大24h, crash=风险最高24h），"
             "当目标仓位偏离当前仓位超过阈值时触发调仓"
         ),
     }
