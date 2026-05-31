@@ -7,14 +7,14 @@ interface RiskBarProps {
 
 export function RiskBar({ score, level }: RiskBarProps) {
   return (
-    <div className="risk-bar">
-      <div className="risk-bar__track">
+    <div className="flex items-center gap-3">
+      <div className="flex-1 h-2 rounded-full bg-bg-secondary overflow-hidden">
         <div
-          className="risk-bar__fill"
+          className="h-full rounded-full transition-all duration-500"
           style={{ width: `${score}%`, background: riskColor(level) }}
         />
       </div>
-      <span className="risk-bar__label" style={{ color: riskColor(level) }}>
+      <span className="text-sm font-bold min-w-[2rem] text-right" style={{ color: riskColor(level) }}>
         {score.toFixed(0)}
       </span>
     </div>

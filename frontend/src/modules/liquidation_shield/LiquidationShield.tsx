@@ -9,14 +9,14 @@ export function LiquidationShield() {
     queryFn: api.liquidationShield,
   });
 
-  if (isLoading) return <div className="loading">加载清算保护数据...</div>;
-  if (error) return <div className="error">清算保护数据不可用</div>;
+  if (isLoading) return <div className="text-center py-8 text-text-secondary animate-pulse">加载清算保护数据...</div>;
+  if (error) return <div className="text-center py-8 text-risk-high">清算保护数据不可用</div>;
   if (!data) return null;
 
   return (
-    <section className="liquidation-shield">
-      <h2>Liquidation Cascade Shield</h2>
-      <p className="subtitle">
+    <section className="animate-fade-in">
+      <h2 className="text-xl font-bold mb-1 gradient-text">Liquidation Cascade Shield</h2>
+      <p className="text-text-secondary text-sm mb-4">
         基于资金费率 + VaR + 相关性的清算级联风险评估
       </p>
       <ShieldStatus

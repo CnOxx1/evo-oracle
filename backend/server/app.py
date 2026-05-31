@@ -491,6 +491,196 @@ async def protocol_aggregation(symbol: str = "SUI") -> dict[str, Any]:
     }
 
 
+# ─── 新增功能端点 ───
+
+
+@app.get("/api/history/{symbol}")
+async def risk_history(symbol: str, hours: int = 24) -> dict[str, Any]:
+    """历史风险趋势：返回指定时间段内的风险评分时间序列。"""
+    from history_store import risk_store
+
+    # 每次请求时尝试记录一条最新数据（补充 scheduler 间隔）
+    async with EvoQuantClient() as client:
+        try:
+            risk = await client.get_risk_score(symbol)
+            signal = await client.get_signal(symbol)
+            macro = await client.get_macro_regime()
+            risk_store.record(
+                symbol=symbol.upper(),
+                risk_score=risk.get("risk_score", 50),
+                risk_level=risk.get("risk_level", "medium"),
+                volatility=signal.get("volatility", 0),
+                macro_stance=macro.get("overall_stance", "neutral"),
+            )
+        except (EvoQuantAPIError, Exception):
+            pass
+
+    history = risk_store.get_history(symbol.upper(), hours=hours)
+    return {"symbol": symbol.upper(), "hours": hours, "data_points": len(history), "history": history}
+
+
+@app.get("/api/cascade-simulator")
+async def cascade_simulator(asset: str = "BTC", shock_pct: float = -30) -> dict[str, Any]:
+    """清算瀑布模拟器：模拟连锁清算过程。"""
+    from cascade_simulator import simulate_cascade
+
+    async with EvoQuantClient() as client:
+        try:
+            correlation = await client.get_correlation_matrix()
+            funding = await client.get_funding_all()
+        except EvoQuantAPIError:
+            correlation = {"symbols": ["BTC", "ETH", "SUI"], "correlation_matrix": {}}
+            funding = {"funding_rates": {}}
+
+    oi_data: dict[str, Any] = {}
+    result = simulate_cascade(asset.upper(), shock_pct, correlation, funding, oi_data)
+    return result
+
+
+@app.get("/api/portfolio")
+async def portfolio() -> dict[str, Any]:
+    """Portfolio 追踪：用户持仓风险分析。"""
+    from portfolio_tracker import compute_portfolio
+
+    risk_scores: dict[str, Any] = {}
+    async with EvoQuantClient() as client:
+        for symbol in settings.tracked_symbols:
+            try:
+                risk_scores[symbol] = await client.get_risk_score(symbol)
+            except EvoQuantAPIError:
+                risk_scores[symbol] = {"risk_score": 50, "risk_level": "medium"}
+        try:
+            funding = await client.get_funding_all()
+        except EvoQuantAPIError:
+            funding = {"funding_rates": {}}
+
+    return compute_portfolio(risk_scores, funding)
+
+
+@app.get("/api/alert-rules")
+async def list_alert_rules() -> dict[str, Any]:
+    """列出所有自定义告警规则。"""
+    from alert_rules import rule_store
+
+    rules = rule_store.list_rules()
+    return {"rules": rules, "count": len(rules)}
+
+
+@app.get("/api/alert-rules/create")
+async def create_alert_rule(
+    name: str = "风险分告警",
+    symbol: str = "SUI",
+    metric: str = "risk_score",
+    operator: str = ">",
+    threshold: float = 70,
+) -> dict[str, Any]:
+    """创建自定义告警规则。"""
+    from alert_rules import rule_store
+
+    rule = rule_store.create_rule(name, symbol, metric, operator, threshold)
+    return {"status": "created", "rule": rule}
+
+
+@app.get("/api/alert-rules/delete/{rule_id}")
+async def delete_alert_rule(rule_id: str) -> dict[str, Any]:
+    """删除告警规则。"""
+    from alert_rules import rule_store
+
+    ok = rule_store.delete_rule(rule_id)
+    return {"status": "deleted" if ok else "not_found"}
+
+
+@app.get("/api/alert-rules/evaluate")
+async def evaluate_alert_rules() -> dict[str, Any]:
+    """评估所有规则，返回触发的告警。"""
+    from alert_rules import rule_store
+
+    current_data: dict[str, Any] = {}
+    async with EvoQuantClient() as client:
+        for symbol in settings.tracked_symbols:
+            try:
+                risk = await client.get_risk_score(symbol)
+                signal = await client.get_signal(symbol)
+                current_data[symbol] = {**risk, **signal}
+            except EvoQuantAPIError:
+                pass
+
+    triggered = rule_store.evaluate_rules(current_data)
+    return {"triggered_count": len(triggered), "triggered": triggered}
+
+
+@app.get("/api/protocol-comparison")
+async def protocol_comparison() -> dict[str, Any]:
+    """协议安全排名对比。"""
+    from protocol_comparison import compute_protocol_comparison
+
+    risk_scores: dict[str, Any] = {}
+    async with EvoQuantClient() as client:
+        for symbol in settings.tracked_symbols:
+            try:
+                risk_scores[symbol] = await client.get_risk_score(symbol)
+            except EvoQuantAPIError:
+                risk_scores[symbol] = {"risk_score": 50, "risk_level": "medium"}
+        try:
+            funding = await client.get_funding_all()
+        except EvoQuantAPIError:
+            funding = {"funding_rates": {}}
+
+    return compute_protocol_comparison(risk_scores, funding)
+
+
+@app.get("/api/macro/detail")
+async def macro_detail() -> dict[str, Any]:
+    """宏观市场状态详情。"""
+    from macro_detail import compute_macro_detail
+
+    async with EvoQuantClient() as client:
+        try:
+            macro = await client.get_macro_regime()
+            portfolio = await client.get_portfolio_risk()
+        except EvoQuantAPIError:
+            macro = {"overall_stance": "neutral", "indicators": {}}
+            portfolio = {"var_95": 0.03}
+
+    return compute_macro_detail(macro, portfolio)
+
+
+@app.get("/api/liquidation-heatmap")
+async def liquidation_heatmap() -> dict[str, Any]:
+    """清算热力图：按交易所 × 杠杆倍数展示清算密度。"""
+    cache_key = "liq_heatmap"
+    if (cached := _cache_get(cache_key)) is not None:
+        return cached
+
+    from liquidation_heatmap import compute_liquidation_heatmap
+
+    async with EvoQuantClient() as client:
+        try:
+            funding = await client.get_funding_all()
+        except EvoQuantAPIError:
+            funding = {"funding_rates": {}}
+
+    oi_data: dict[str, Any] = {}
+    result = compute_liquidation_heatmap(funding, oi_data)
+    _cache_set(cache_key, result)
+    return result
+
+
+@app.get("/api/vault/attribution")
+async def vault_attribution() -> dict[str, Any]:
+    """Vault 收益归因。"""
+    from vault_attribution import compute_vault_attribution
+
+    async with EvoQuantClient() as client:
+        try:
+            risk = await client.get_risk_score(settings.tracked_symbols[0])
+            risk_score = risk.get("risk_score", 50)
+        except EvoQuantAPIError:
+            risk_score = 50
+
+    return compute_vault_attribution(risk_score)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="EvoOracle 前端 API 服务")
     parser.add_argument("--host", default=settings.server_host)

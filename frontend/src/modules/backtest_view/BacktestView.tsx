@@ -22,18 +22,18 @@ export function BacktestView() {
 
   const handleReset = useCallback(() => setParams(DEFAULT_PARAMS), []);
 
-  if (error) return <div className="error">回测数据不可用</div>;
+  if (error) return <div className="text-center py-8 text-risk-high">回测数据不可用</div>;
 
   return (
-    <section className="backtest-view">
-      <h2>LUNA 崩盘交互式回测</h2>
-      <p className="subtitle">
+    <section className="animate-fade-in">
+      <h2 className="text-xl font-bold mb-1 gradient-text">LUNA 崩盘交互式回测</h2>
+      <p className="text-text-secondary text-sm mb-4">
         2022-05-07 ~ 2022-05-13 | 调整参数，实时对比 EvoOracle 保护效果
       </p>
 
       <ParamSliders params={params} onChange={setParams} onReset={handleReset} />
 
-      {isLoading && <div className="loading">计算中...</div>}
+      {isLoading && <div className="text-center py-8 text-text-secondary animate-pulse">计算中...</div>}
 
       {data && (
         <>

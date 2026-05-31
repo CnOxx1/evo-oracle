@@ -2,6 +2,7 @@
 
 编排 api_client → signal_processor → sui_publisher，
 每 poll_interval_seconds 把 EvoQuantV3 信号发布到 Sui 链。
+同时记录历史风险数据到 SQLite。
 """
 
 from __future__ import annotations
@@ -13,6 +14,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from api_client.client import EvoQuantAPIError, EvoQuantClient
 from config.settings import settings
+from history_store import risk_store
 from signal_processor.processor import build_oracle_payload
 from sui_publisher.publisher import SuiPublisher
 
@@ -24,7 +26,7 @@ logger = logging.getLogger("evo-oracle.scheduler")
 
 
 async def run_once() -> None:
-    """执行一轮：拉取 → 转换 → 上链。"""
+    """执行一轮：拉取 → 转换 → 上链 → 记录历史。"""
     publisher = SuiPublisher()
 
     async with EvoQuantClient() as client:
@@ -45,6 +47,19 @@ async def run_once() -> None:
             except EvoQuantAPIError as e:
                 logger.error("拉取 %s 数据失败，跳过: %s", symbol, e)
                 continue
+
+            # 记录历史风险数据
+            try:
+                risk_store.record(
+                    symbol=symbol,
+                    risk_score=risk.get("risk_score", 50),
+                    risk_level=risk.get("risk_level", "medium"),
+                    volatility=signal.get("volatility", 0),
+                    macro_stance=macro.get("overall_stance", "neutral"),
+                )
+                logger.info("已记录 %s 历史风险数据: score=%s", symbol, risk.get("risk_score"))
+            except Exception as e:
+                logger.error("记录 %s 历史数据失败: %s", symbol, e)
 
             payload = build_oracle_payload(signal, risk, macro)
             logger.info("payload[%s]=%s", symbol, payload)

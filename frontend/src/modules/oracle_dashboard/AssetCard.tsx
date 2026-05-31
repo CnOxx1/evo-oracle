@@ -31,18 +31,23 @@ export function AssetCard({ asset, onSelect }: AssetCardProps) {
   const fundingAnomaly = extractFunding(asset.funding_anomaly);
 
   return (
-    <div className="asset-card" onClick={() => onSelect(asset.symbol)}>
-      <div className="asset-card__header">
-        <h3>{asset.symbol}</h3>
-        <span className="asset-card__trend">{trend}</span>
+    <div
+      className="glass-card p-5 cursor-pointer hover:border-accent/40 transition-all duration-300 hover:shadow-[0_0_20px_rgba(139,92,246,0.15)]"
+      onClick={() => onSelect(asset.symbol)}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-lg font-bold text-text-primary">{asset.symbol}</h3>
+        <span className="text-sm text-accent">{trend}</span>
       </div>
       <RiskBar score={asset.risk_score} level={asset.risk_level} />
-      <div className="asset-card__meta">
+      <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-text-secondary">
         <span>宏观: {asset.macro_stance}</span>
         <span>波动率: {(vol * 100).toFixed(1)}%</span>
-        {fundingAnomaly && <span className="badge-warning">资金费异常</span>}
+        {fundingAnomaly && (
+          <span className="px-2 py-0.5 rounded-full bg-risk-high/20 text-risk-high font-medium">资金费异常</span>
+        )}
       </div>
-      <div className="asset-card__time">{fmtTime(asset.generated_at)}</div>
+      <div className="mt-2 text-xs text-text-secondary/60">{fmtTime(asset.generated_at)}</div>
     </div>
   );
 }

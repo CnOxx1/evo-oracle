@@ -36,10 +36,10 @@ export function Overview() {
 
   const riskColor = (level: string) => {
     switch (level) {
-      case "critical": return "var(--risk-critical)";
-      case "high": return "var(--risk-high)";
-      case "medium": return "var(--risk-medium)";
-      default: return "var(--risk-low)";
+      case "critical": return "var(--color-risk-critical)";
+      case "high": return "var(--color-risk-high)";
+      case "medium": return "var(--color-risk-medium)";
+      default: return "var(--color-risk-low)";
     }
   };
 
@@ -51,65 +51,74 @@ export function Overview() {
     }
   };
 
-  if (isLoading) return <div className="loading">加载系统概览...</div>;
-  if (error) return <div className="error">概览服务不可用</div>;
+  if (isLoading) return <div className="text-text-secondary animate-pulse p-8 text-center">加载系统概览...</div>;
+  if (error) return <div className="text-risk-high p-8 text-center">概览服务不可用</div>;
   if (!data) return null;
 
   return (
-    <section className="overview">
-      <h2 className="overview__title">EvoOracle 全局风险概览</h2>
+    <section className="animate-fade-in space-y-8">
+      <div className="text-center">
+        <h2 className="text-4xl font-bold gradient-text mb-2">EvoOracle 全局风险概览</h2>
+      </div>
 
-      <div className="overview__intro">
-        <p className="overview__intro-headline">
-          <strong>EvoOracle</strong> 是 Sui 上的风险预言机 —— 价格预言机告诉你"现在多少钱"，
-          EvoOracle 告诉你<strong>"现在有多危险"</strong>。一个信号，同时保护借贷、永续、金库三类协议。
+      <div className="glass-card p-6">
+        <p className="text-text-secondary leading-relaxed">
+          <strong className="text-text-primary">EvoOracle</strong> 是 Sui 上的风险预言机 ——
+          价格预言机告诉你"现在多少钱"，EvoOracle 告诉你<strong className="text-accent">"现在有多危险"</strong>。
+          一个信号，同时保护借贷、永续、金库三类协议。
         </p>
-        <div className="overview__features">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4">
           {FEATURES.map((f) => (
-            <div key={f} className="overview__feature">
-              <span className="overview__feature-dot" />
+            <div key={f} className="flex items-center gap-2 text-sm text-text-secondary">
+              <span className="w-2 h-2 rounded-full bg-accent pulse-glow" />
               <span>{f}</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="overview__hero">
-        <div className="overview__score-ring" style={{ borderColor: riskColor(data.system_risk_level) }}>
-          <span className="overview__score-value">{data.system_risk_score}</span>
-          <span className="overview__score-label">系统风险</span>
+      <div className="flex flex-col md:flex-row items-center gap-8">
+        <div className="relative flex-shrink-0">
+          <div
+            className="w-36 h-36 rounded-full border-4 flex flex-col items-center justify-center glow-border"
+            style={{ borderColor: riskColor(data.system_risk_level) }}
+          >
+            <span className="text-4xl font-bold text-text-primary">{data.system_risk_score}</span>
+            <span className="text-xs text-text-secondary mt-1">系统风险</span>
+          </div>
         </div>
-        <div className="overview__hero-meta">
-          <span className="overview__risk-level" style={{ color: riskColor(data.system_risk_level) }}>
+        <div className="flex flex-col gap-2">
+          <span className="text-2xl font-bold" style={{ color: riskColor(data.system_risk_level) }}>
             {data.system_risk_level.toUpperCase()}
           </span>
-          <span className="overview__macro">宏观: {macroLabel(data.macro_stance)}</span>
-          <span className="overview__status">
-            数据源: <span style={{ color: data.data_source_status === "online" ? "var(--risk-low)" : "var(--risk-high)" }}>
+          <span className="text-text-secondary">宏观: {macroLabel(data.macro_stance)}</span>
+          <span className="text-text-secondary">
+            数据源:{" "}
+            <span style={{ color: data.data_source_status === "online" ? "var(--color-risk-low)" : "var(--color-risk-high)" }}>
               {data.data_source_status === "online" ? "在线" : "离线"}
             </span>
           </span>
         </div>
       </div>
 
-      <div className="overview__cards">
-        <div className="overview__card">
-          <span className="overview__card-label">VaR (95%)</span>
-          <span className="overview__card-value">{data.portfolio_var_95}%</span>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="glass-card p-5 text-center">
+          <span className="text-xs text-text-secondary block mb-1">VaR (95%)</span>
+          <span className="text-2xl font-bold text-text-primary">{data.portfolio_var_95}%</span>
         </div>
-        <div className="overview__card">
-          <span className="overview__card-label">年化波动率</span>
-          <span className="overview__card-value">{data.annualized_volatility}%</span>
+        <div className="glass-card p-5 text-center">
+          <span className="text-xs text-text-secondary block mb-1">年化波动率</span>
+          <span className="text-2xl font-bold text-text-primary">{data.annualized_volatility}%</span>
         </div>
-        <div className="overview__card">
-          <span className="overview__card-label">高风险资产</span>
-          <span className="overview__card-value" style={{ color: data.high_risk_asset_count > 0 ? "var(--risk-high)" : "var(--risk-low)" }}>
+        <div className="glass-card p-5 text-center">
+          <span className="text-xs text-text-secondary block mb-1">高风险资产</span>
+          <span className="text-2xl font-bold" style={{ color: data.high_risk_asset_count > 0 ? "var(--color-risk-high)" : "var(--color-risk-low)" }}>
             {data.high_risk_asset_count} / {data.total_tracked_assets}
           </span>
         </div>
-        <div className="overview__card">
-          <span className="overview__card-label">活跃告警</span>
-          <span className="overview__card-value" style={{ color: data.active_alerts > 3 ? "var(--risk-high)" : "var(--text-primary)" }}>
+        <div className="glass-card p-5 text-center">
+          <span className="text-xs text-text-secondary block mb-1">活跃告警</span>
+          <span className="text-2xl font-bold" style={{ color: data.active_alerts > 3 ? "var(--color-risk-high)" : "var(--color-text-primary)" }}>
             {data.active_alerts}
           </span>
         </div>

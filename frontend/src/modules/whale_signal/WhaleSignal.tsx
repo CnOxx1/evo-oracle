@@ -9,14 +9,14 @@ export function WhaleSignal() {
     queryFn: api.whaleSignals,
   });
 
-  if (isLoading) return <div className="loading">加载鲸鱼信号...</div>;
-  if (error) return <div className="error">鲸鱼信号数据不可用</div>;
+  if (isLoading) return <div className="text-center py-8 text-text-secondary animate-pulse">加载鲸鱼信号...</div>;
+  if (error) return <div className="text-center py-8 text-risk-high">鲸鱼信号数据不可用</div>;
   if (!data) return null;
 
   return (
-    <section className="whale-signal">
-      <h2>Whale Risk Signal</h2>
-      <p className="subtitle">
+    <section className="animate-fade-in">
+      <h2 className="text-xl font-bold mb-1 gradient-text">Whale Risk Signal</h2>
+      <p className="text-text-secondary text-sm mb-4">
         {data.active_whale_count}/{data.total_assets} 资产检测到鲸鱼活动 |
         积累 {data.accumulating_count} | 派发 {data.distributing_count}
       </p>

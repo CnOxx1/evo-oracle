@@ -20,7 +20,6 @@ export function VaultDeposit({ walletAddress, signAndExecute, onSuccess }: Vault
   const [error, setError] = useState<string | null>(null);
   const [balance, setBalance] = useState<string | null>(null);
 
-  // 查询 vault 余额
   const fetchVaultBalance = async () => {
     if (VAULT_ID === "0x0") return;
     try {
@@ -87,57 +86,55 @@ export function VaultDeposit({ walletAddress, signAndExecute, onSuccess }: Vault
 
   if (!walletAddress) {
     return (
-      <div className="vault-actions">
-        <h4>Testnet 存取操作</h4>
-        <p className="vault-actions__status">请先连接钱包</p>
+      <div className="bg-bg-card/50 backdrop-blur-md border border-accent/10 rounded-xl p-5 mt-6">
+        <h4 className="font-semibold mb-2 text-text-primary">Testnet 存取操作</h4>
+        <p className="text-sm text-text-secondary">请先连接钱包</p>
       </div>
     );
   }
 
   return (
-    <div className="vault-actions">
-      <h4>Testnet 存取操作</h4>
-      <div className="vault-actions__form">
+    <div className="bg-bg-card/50 backdrop-blur-md border border-accent/10 rounded-xl p-5 mt-6">
+      <h4 className="font-semibold mb-4 text-text-primary">Testnet 存取操作</h4>
+      <div className="flex gap-3 items-center flex-wrap">
         <input
           type="number"
-          className="vault-actions__input"
+          className="bg-bg-secondary border border-border rounded-lg px-3 py-2 text-text-primary text-sm w-36 focus:outline-none focus:border-accent transition-colors"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           min="0.01"
           step="0.01"
           placeholder="SUI 数量"
         />
-        <button className="btn-deposit" onClick={handleDeposit}
-          disabled={status === "pending"}>
+        <button
+          className="bg-gradient-to-r from-accent to-blue-500 text-white border-none rounded-lg px-5 py-2 font-semibold cursor-pointer transition-all hover:opacity-90 hover:shadow-[0_0_20px_rgba(108,99,255,0.4)]"
+          onClick={handleDeposit}
+          disabled={status === "pending"}
+        >
           存入 SUI
         </button>
-        <button className="btn-withdraw" onClick={handleWithdraw}
-          disabled={status === "pending"}>
+        <button
+          className="bg-bg-secondary text-text-primary border border-border rounded-lg px-4 py-2 text-sm font-semibold cursor-pointer hover:border-accent transition-colors"
+          onClick={handleWithdraw}
+          disabled={status === "pending"}
+        >
           取出 SUI
         </button>
       </div>
 
       {status === "pending" && (
-        <p className="vault-actions__status vault-actions__status--pending">
-          交易签名中...
-        </p>
+        <p className="text-sm mt-3 text-severity-warning">交易签名中...</p>
       )}
       {status === "success" && txDigest && (
-        <p className="vault-actions__status vault-actions__status--success">
-          交易成功: {txDigest.slice(0, 16)}...
-        </p>
+        <p className="text-sm mt-3 text-risk-low">交易成功: {txDigest.slice(0, 16)}...</p>
       )}
       {status === "error" && error && (
-        <p className="vault-actions__status vault-actions__status--error">
-          {error}
-        </p>
+        <p className="text-sm mt-3 text-risk-high">{error}</p>
       )}
 
       {balance && (
-        <div className="vault-balance">
-          <div className="vault-balance__item">
-            Vault 余额: <span>{balance} SUI</span>
-          </div>
+        <div className="mt-4 pt-3 border-t border-border text-sm text-text-secondary">
+          Vault 余额: <span className="text-text-primary font-semibold">{balance} SUI</span>
         </div>
       )}
     </div>

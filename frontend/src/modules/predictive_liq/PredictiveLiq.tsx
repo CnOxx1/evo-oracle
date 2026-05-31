@@ -31,71 +31,66 @@ export function PredictiveLiq() {
 
   const riskColor = (level: string) => {
     switch (level) {
-      case "critical": return "var(--risk-critical)";
-      case "high": return "var(--risk-high)";
-      case "medium": return "var(--risk-medium)";
-      default: return "var(--risk-low)";
+      case "critical": return "var(--color-risk-critical)";
+      case "high": return "var(--color-risk-high)";
+      case "medium": return "var(--color-risk-medium)";
+      default: return "var(--color-risk-low)";
     }
   };
 
   const probColor = (prob: number) => {
-    if (prob >= 0.7) return "var(--risk-critical)";
-    if (prob >= 0.5) return "var(--risk-high)";
-    if (prob >= 0.3) return "var(--risk-medium)";
-    return "var(--risk-low)";
+    if (prob >= 0.7) return "var(--color-risk-critical)";
+    if (prob >= 0.5) return "var(--color-risk-high)";
+    if (prob >= 0.3) return "var(--color-risk-medium)";
+    return "var(--color-risk-low)";
   };
 
-  if (isLoading) return <div className="loading">加载清算预测...</div>;
-  if (error) return <div className="error">清算预测服务不可用</div>;
+  if (isLoading) return <div className="text-center py-8 text-text-secondary animate-pulse">加载清算预测...</div>;
+  if (error) return <div className="text-center py-8 text-risk-high">清算预测服务不可用</div>;
 
   const sorted = [...(data?.assets ?? [])].sort(
     (a, b) => b.liquidation_probability - a.liquidation_probability
   );
 
   return (
-    <section className="predictive-liq">
-      <h2 className="predictive-liq__title">预测性清算告警</h2>
+    <section className="animate-fade-in max-w-[900px]">
+      <h2 className="text-xl font-bold mb-4 gradient-text">预测性清算告警</h2>
 
-      <div className="predictive-liq__global">
-        <span className="predictive-liq__global-label">全局级联概率</span>
+      <div className="glass-card p-5 mb-6 flex items-center gap-4">
+        <span className="text-sm text-text-secondary">全局级联概率</span>
         <span
-          className="predictive-liq__global-value"
+          className="text-3xl font-bold"
           style={{ color: riskColor(data?.cascade_risk_level ?? "low") }}
         >
           {((data?.cascade_probability ?? 0) * 100).toFixed(1)}%
         </span>
         <span
-          className="predictive-liq__global-level"
+          className="text-sm font-bold uppercase"
           style={{ color: riskColor(data?.cascade_risk_level ?? "low") }}
         >
           {data?.cascade_risk_level?.toUpperCase()}
         </span>
       </div>
 
-      <div className="predictive-liq__list">
+      <div className="space-y-3">
         {sorted.map((asset) => (
-          <div key={asset.symbol} className="predictive-liq__item">
-            <div className="predictive-liq__item-header">
-              <span className="predictive-liq__symbol">{asset.symbol}</span>
-              <span
-                className="predictive-liq__prob"
-                style={{ color: probColor(asset.liquidation_probability) }}
-              >
+          <div key={asset.symbol} className="glass-card p-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="font-bold text-sm">{asset.symbol}</span>
+              <span className="font-bold" style={{ color: probColor(asset.liquidation_probability) }}>
                 {(asset.liquidation_probability * 100).toFixed(1)}%
               </span>
             </div>
-
-            <div className="predictive-liq__bar-wrap">
+            <div className="h-1 bg-bg-secondary rounded-full overflow-hidden mb-2">
               <div
-                className="predictive-liq__bar"
+                className="h-full rounded-full transition-all duration-300"
                 style={{
                   width: `${asset.liquidation_probability * 100}%`,
                   background: probColor(asset.liquidation_probability),
                 }}
               />
             </div>
-
-            <div className="predictive-liq__factors">
+            <div className="flex gap-2 flex-wrap">
               <FactorTag label="OI" value={asset.factors.oi_contribution} />
               <FactorTag label="Funding" value={asset.factors.funding_contribution} />
               <FactorTag label="Corr" value={asset.factors.correlation_contribution} />
@@ -111,7 +106,7 @@ export function PredictiveLiq() {
 function FactorTag({ label, value }: { label: string; value: number }) {
   const opacity = Math.min(1, 0.3 + value * 0.7);
   return (
-    <span className="predictive-liq__factor" style={{ opacity }}>
+    <span className="text-[0.7rem] bg-bg-secondary px-2 py-0.5 rounded" style={{ opacity }}>
       {label}: {(value * 100).toFixed(0)}%
     </span>
   );

@@ -6,38 +6,36 @@ interface CorrelationHeatmapProps {
 }
 
 export function CorrelationHeatmap({ edges, nodes }: CorrelationHeatmapProps) {
-  // 取 top 20 条最强链路展示
   const topEdges = edges.slice(0, 20);
 
   return (
-    <div className="correlation-heatmap">
-      <h4>高相关性链路 (|r| &ge; 0.7)</h4>
-      <div className="correlation-heatmap__grid">
+    <div className="glass-card p-5 mb-6">
+      <h4 className="text-sm text-text-secondary font-semibold mb-4">高相关性链路 (|r| &ge; 0.7)</h4>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
         {topEdges.map((edge, i) => {
           const isStrong = edge.strength === "strong";
           const color = edge.risk_type === "contagion"
-            ? isStrong ? "var(--risk-critical)" : "var(--risk-high)"
-            : "var(--risk-low)";
+            ? isStrong ? "var(--color-risk-critical)" : "var(--color-risk-high)"
+            : "var(--color-risk-low)";
           const opacity = Math.abs(edge.correlation);
 
           return (
-            <div key={i} className="correlation-heatmap__item" style={{ borderLeftColor: color }}>
-              <div className="correlation-heatmap__pair">
-                <span className="correlation-heatmap__asset">{edge.source}</span>
-                <span className="correlation-heatmap__arrow" style={{ color }}>
+            <div key={i} className="bg-bg-secondary border-l-3 rounded p-2" style={{ borderLeftColor: color }}>
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="font-semibold text-xs">{edge.source}</span>
+                <span className="text-sm" style={{ color }}>
                   {edge.risk_type === "contagion" ? "↔" : "⇋"}
                 </span>
-                <span className="correlation-heatmap__asset">{edge.target}</span>
+                <span className="font-semibold text-xs">{edge.target}</span>
               </div>
-              <div className="correlation-heatmap__bar">
-                <div
-                  className="correlation-heatmap__fill"
-                  style={{ width: `${opacity * 100}%`, background: color }}
-                />
+              <div className="h-0.5 bg-bg-primary rounded-full overflow-hidden mb-1">
+                <div className="h-full rounded-full" style={{ width: `${opacity * 100}%`, background: color }} />
               </div>
-              <div className="correlation-heatmap__meta">
+              <div className="flex justify-between text-[0.7rem]">
                 <span style={{ color }}>{edge.correlation.toFixed(3)}</span>
-                <span className={`correlation-heatmap__tag correlation-heatmap__tag--${edge.risk_type}`}>
+                <span className={`px-1 rounded text-[0.6rem] font-bold ${
+                  edge.risk_type === "contagion" ? "bg-risk-high/20 text-risk-high" : "bg-risk-low/20 text-risk-low"
+                }`}>
                   {edge.risk_type === "contagion" ? "传导" : "对冲"}
                 </span>
               </div>
@@ -45,7 +43,7 @@ export function CorrelationHeatmap({ edges, nodes }: CorrelationHeatmapProps) {
           );
         })}
       </div>
-      <div className="correlation-heatmap__legend">
+      <div className="flex gap-6 mt-4 text-xs text-text-secondary">
         <span>资产总数: {nodes.length}</span>
         <span>传导链路: {edges.filter(e => e.risk_type === "contagion").length}</span>
         <span>对冲链路: {edges.filter(e => e.risk_type === "hedge").length}</span>

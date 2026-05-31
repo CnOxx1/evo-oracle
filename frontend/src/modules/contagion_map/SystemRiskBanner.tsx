@@ -5,27 +5,27 @@ interface SystemRiskBannerProps {
 }
 
 const levelColors: Record<string, string> = {
-  critical: "var(--risk-critical)",
-  high: "var(--risk-high)",
-  medium: "var(--risk-medium)",
-  low: "var(--risk-low)",
+  critical: "var(--color-risk-critical)",
+  high: "var(--color-risk-high)",
+  medium: "var(--color-risk-medium)",
+  low: "var(--color-risk-low)",
 };
 
 export function SystemRiskBanner({ risk }: SystemRiskBannerProps) {
-  const color = levelColors[risk.level] || "var(--text-secondary)";
+  const color = levelColors[risk.level] || "var(--color-text-secondary)";
 
   return (
-    <div className="system-risk-banner" style={{ borderLeftColor: color }}>
-      <div className="system-risk-banner__header">
-        <span className="system-risk-banner__score" style={{ color }}>
+    <div className="glass-card p-4 mb-6 border-l-4" style={{ borderLeftColor: color }}>
+      <div className="flex items-center gap-3 mb-2">
+        <span className="text-3xl font-bold" style={{ color }}>
           {risk.score.toFixed(0)}
         </span>
-        <span className="system-risk-banner__level" style={{ color }}>
+        <span className="text-sm font-bold" style={{ color }}>
           {risk.level.toUpperCase()}
         </span>
       </div>
-      <p className="system-risk-banner__desc">{risk.description}</p>
-      <div className="system-risk-banner__metrics">
+      <p className="text-sm text-text-secondary mb-3">{risk.description}</p>
+      <div className="flex gap-4 flex-wrap text-xs text-text-secondary">
         <span>平均相关性: {risk.avg_correlation.toFixed(2)}</span>
         <span>最大相关性: {risk.max_correlation.toFixed(2)}</span>
         <span>年化波动率: {(risk.portfolio_volatility * 100).toFixed(1)}%</span>
