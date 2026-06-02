@@ -27,7 +27,7 @@ EvoOracle 的后端服务，承担两个角色：
 | `stress_test` | stress_test/ | 压力测试模拟器（冲击传导 + 级联清算估算） |
 | `predictive_liq` | predictive_liq/ | 预测性清算告警（4因子加权 + sigmoid概率） |
 | `protocol_aggregator` | protocol_aggregator/ | 多协议联动（一信号同时驱动 Lending/Perp/Vault） |
-| `rebalancer_demo` | rebalancer_demo/ | 实时调仓演示（三场景24h时间序列动画） |
+| `rebalancer_demo` | rebalancer_demo/ | 实时调仓演示（基于真实历史风险数据，三场景窗口选取） |
 | `signal_processor` | [signal_processor/](signal_processor/README.md) | 信号 → 链上整数格式转换 |
 | `sui_publisher` | [sui_publisher/](sui_publisher/README.md) | 提交 Move 合约调用 |
 | `scheduler` | [scheduler/](scheduler/README.md) | Bridge 定时主循环 |
@@ -76,3 +76,4 @@ python -m server.app --port 8100
 | 2026-05-31 | 实现 `/api/vault/state`（基于风险评分动态模拟仓位）和 `/api/backtest/luna`（硬编码 LUNA 崩盘时间序列）；sui_publisher 集成 pysui（保留 dry-run 兜底） |
 | 2026-05-31 | 新增三大风险引擎：contagion_engine（跨资产传导图）、liquidation_shield（清算级联保护，已接入真实 OI 数据）、whale_signal（鲸鱼风险信号）；LUNA 回测升级为参数化交互式 demo |
 | 2026-05-31 | 新增四大高级模块：stress_test（压力测试模拟器，基于相关性矩阵计算冲击传导+级联清算估算）、predictive_liq（预测性清算告警，OI增速/资金费率/相关性集中度/波动率四因子sigmoid概率）、protocol_aggregator（多协议联动，一信号同时驱动Lending LTV/Perp杠杆/Vault仓位）、rebalancer_demo（实时调仓演示，三场景24h时间序列动画） |
+| 2026-05-31 | 移除所有模拟数据：liquidation_heatmap/cascade_simulator/rebalancer_demo 改为从 EvoQuantV3 获取真实 OI、清算 surges、历史风险时序数据驱动计算，不再使用 random 模块 |
